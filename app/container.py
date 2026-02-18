@@ -3,6 +3,7 @@ from dependency_injector import containers, providers
 from app.settings import Settings
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
+from src.infrastructure.integrations.email_service import EmailService
 
 
 class Container(containers.DeclarativeContainer):

@@ -1,6 +1,4 @@
-from typing import Protocol, Optional, Any, List
-
-from fastapi import UploadFile
+from typing import Protocol, Optional
 
 
 class IUoW(Protocol):
