@@ -4,6 +4,8 @@ from app.settings import Settings
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
 from src.infrastructure.integrations.email_service import EmailService
+from src.infrastructure.integrations.hash_service import HashService
+from src.infrastructure.integrations.jwt_service import JWTService
 
 
 class Container(containers.DeclarativeContainer):
