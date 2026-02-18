@@ -1,6 +1,7 @@
 from dependency_injector import containers, providers
 
 from app.settings import Settings
+from src.application.users.services import EmailOtpService
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
 from src.infrastructure.integrations.email_service import EmailService
@@ -47,9 +48,9 @@ class Container(containers.DeclarativeContainer):
         access_token_expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
     )
 
-    # email_otp_service = providers.Factory(
-    #     EmailOtpService,
-    #     email_service=email_service,
-    #     redis=redis,
-    #     otp_ttl=settings.OTP_TTL,
-    # )
+    email_otp_service = providers.Factory(
+        EmailOtpService,
+        email_service=email_service,
+        redis=redis,
+        otp_ttl=settings.OTP_TTL,
+    )
