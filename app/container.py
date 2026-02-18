@@ -47,9 +47,9 @@ class Container(containers.DeclarativeContainer):
         access_token_expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
     )
 
-    email_otp_service = providers.Factory(
-        EmailOtpService,
-        email_service=email_service,
-        redis=redis,
-        otp_ttl=settings.OTP_TTL,
-    )
+    # email_otp_service = providers.Factory(
+    #     EmailOtpService,
+    #     email_service=email_service,
+    #     redis=redis,
+    #     otp_ttl=settings.OTP_TTL,
+    # )
