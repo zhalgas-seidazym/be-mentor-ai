@@ -1,0 +1,67 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+.eggs/
+*.so
+
+# ---- Environment ----
+.env
+.venv/
+venv/
+env/
+ENV/
+.idea/
+.vscode/
+*.DS_Store
+
+# ---- Logs & cache ----
+*.log
+*.sqlite3
+*.db
+*.pid
+*.seed
+.cache/
+*.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ---- Byte-compiled ----
+__pycache__/
+*.pyo
+*.pyd
+*.pyc
+
+# ---- Build artifacts ----
+dist/
+build/
+*.egg
+*.egg-info/
+.eggs/
+
+# ---- Alembic ----
+migrations/versions/*.pyc
+migrations/__pycache__/
+
+# ---- Docker ----
+*.pid
+*.log
+docker-compose.override.yml
+
+# ---- IDE & OS files ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+Thumbs.db
+.DS_Store
+
+# ---- Test artifacts ----
+.coverage
+pytest_cache/
+reports/
