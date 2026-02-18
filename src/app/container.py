@@ -1,14 +1,15 @@
 from dependency_injector import containers, providers
 
 from src.app.config.config import Settings
+from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
         modules=[
-            "src.presentation.v1.depends.session",
-            "src.presentation.v1.depends.security",
-            "src.presentation.v1.depends.controllers",
+            "src.presentation.depends.session",
+            "src.presentation.depends.security",
+            "src.presentation.depends.controllers",
         ]
     )
 
