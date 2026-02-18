@@ -5,6 +5,7 @@ from src.application.users.services import EmailOtpService
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
 from src.infrastructure.integrations.email_service import EmailService
+from src.infrastructure.integrations.es_client import ElasticsearchClient
 from src.infrastructure.integrations.hash_service import HashService
 from src.infrastructure.integrations.jwt_service import JWTService
 
@@ -53,4 +54,9 @@ class Container(containers.DeclarativeContainer):
         email_service=email_service,
         redis=redis,
         otp_ttl=settings.OTP_TTL,
+    )
+
+    elasticsearch_client = providers.Singleton(
+        ElasticsearchClient,
+        host=settings.elasticsearch_host,
     )

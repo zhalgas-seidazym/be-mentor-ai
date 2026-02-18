@@ -4,6 +4,9 @@ from typing import Protocol, Optional
 class IUoW(Protocol):
     ...
 
+class IElasticSearchClient(Protocol):
+    ...
+
 class IJWTService(Protocol):
     def encode_token(
         self,
