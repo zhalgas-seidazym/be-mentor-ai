@@ -34,6 +34,10 @@ class Container(containers.DeclarativeContainer):
         from_email=settings.SMTP_FROM,
     )
 
+    hash_service = providers.Factory(
+        HashService,
+    )
+
     jwt_service = providers.Factory(
         JWTService,
         secret_key=settings.JWT_SECRET,
@@ -46,8 +50,4 @@ class Container(containers.DeclarativeContainer):
         email_service=email_service,
         redis=redis,
         otp_ttl=settings.OTP_TTL,
-    )
-
-    hash_service = providers.Factory(
-        HashService,
     )
