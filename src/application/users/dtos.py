@@ -13,5 +13,6 @@ class UserDTO(BaseDTOMixin):
     email: Optional[str] = None
     password: Optional[str] = None
     name: Optional[str] = None
+    is_onboarding_completed: Optional[bool] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

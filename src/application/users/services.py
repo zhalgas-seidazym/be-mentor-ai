@@ -1,5 +1,6 @@
 import random
 import string
+from typing import Optional
 
 from fastapi import HTTPException, status as s
 from redis.asyncio import Redis
@@ -13,7 +14,7 @@ class EmailOtpService:
         self.redis = redis
         self.otp_ttl = otp_ttl
 
-    async def send_otp(self, email: str) -> None:
+    async def send_otp(self, email: str, ttl: Optional[int] = None) -> None:
         redis_key = f"otp:{email}"
         existed_key = await self.redis.get(redis_key)
         if existed_key:
@@ -29,7 +30,7 @@ class EmailOtpService:
             body=f"OTP code: {otp}",
         )
 
-        await self.redis.set(redis_key, ex=self.otp_ttl, value=otp)
+        await self.redis.set(redis_key, ex=self.otp_ttl or ttl, value=otp)
         print(await self.redis.get(redis_key))
 
     async def verify_otp(self, email: str, code: str) -> None:

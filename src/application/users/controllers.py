@@ -38,7 +38,10 @@ class UserController(IUserController):
 
         user_data.password = self._hash_service.hash_password(user_data.password)
 
-        created = await self._user_repository.add(user_data.to_payload(exclude_none=True))
+        async with self._uow as uow:
+            created = await self._user_repository.add(
+                user_data.to_payload(exclude_none=True)
+            )
 
         payload = {
             "user_id": created.id,
