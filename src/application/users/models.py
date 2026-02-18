@@ -23,9 +23,9 @@ class User(Base, TimestampMixin):
     )
 
     # --- Profile ---
-    name: Mapped[str] = mapped_column(
+    name: Mapped[str | None] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
     )
 
     # --- Onboarding ---

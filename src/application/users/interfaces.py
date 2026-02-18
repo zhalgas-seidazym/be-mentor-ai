@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Protocol
 
 from src.application.users.dtos import UserDTO
 
@@ -21,4 +21,13 @@ class IUserRepository(ABC):
     async def delete(self, user_id: int) -> Optional[bool]: ...
 
 class IUserController(ABC):
-    pass
+    @abstractmethod
+    async def send_otp(self, email: str) -> Dict: ...
+
+    @abstractmethod
+    async def verify_otp_and_register(self, user_data: UserDTO, code: str) -> Dict: ...
+
+class IEmailOtpService(Protocol):
+    async def send_otp(self, email: str) -> None: ...
+
+    async def verify_otp(self, email: str, code: str) -> None: ...
