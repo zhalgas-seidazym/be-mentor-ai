@@ -1,6 +1,6 @@
 from dependency_injector import containers, providers
 
-from src.app.config.config import Settings
+from app.settings import Settings
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
 
