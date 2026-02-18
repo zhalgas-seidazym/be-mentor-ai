@@ -53,3 +53,27 @@ class UserController(IUserController):
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
+
+    async def login(self, user_data: UserDTO) -> Dict:
+        user = await self._user_repository.get_by_email(user_data.email)
+
+        if user is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"User with {user_data.email} not found")
+
+        password_check = self._hash_service.verify_password(user_data.password, user.password)
+
+        if not password_check:
+            raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail=f"Incorrect credentials")
+
+        payload = {
+            "user_id": user.id,
+        }
+
+        access_token = self._jwt_service.encode_token(data=payload)
+        refresh_token = self._jwt_service.encode_token(data=payload, is_access_token=False)
+
+        return {
+            "detail": "Logged in successfully",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }

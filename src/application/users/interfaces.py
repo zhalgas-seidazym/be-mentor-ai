@@ -27,6 +27,9 @@ class IUserController(ABC):
     @abstractmethod
     async def verify_otp_and_register(self, user_data: UserDTO, code: str) -> Dict: ...
 
+    @abstractmethod
+    async def login(self, user_data: UserDTO) -> Dict: ...
+
 class IEmailOtpService(Protocol):
     async def send_otp(self, email: str) -> None: ...
 
