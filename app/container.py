@@ -1,6 +1,7 @@
 from dependency_injector import containers, providers
 
 from app.settings import Settings
+from src.application.skills.services import SkillSearchService
 from src.application.users.services import EmailOtpService
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
@@ -58,5 +59,10 @@ class Container(containers.DeclarativeContainer):
 
     elasticsearch_client = providers.Singleton(
         ElasticsearchClient,
-        host=settings.elasticsearch_host,
+        host=settings.ELASTIC_SEARCH_HOST,
+    )
+
+    skill_search_service = providers.Factory(
+        SkillSearchService,
+        es_client=elasticsearch_client.provided.client,
     )

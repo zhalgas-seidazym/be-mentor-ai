@@ -1,14 +1,21 @@
-from dataclasses import asdict, is_dataclass, dataclass
+from dataclasses import asdict, is_dataclass, dataclass, fields
 from typing import Optional, Literal, List
 
 
 class BaseDTOMixin:
     @classmethod
     def _from_orm(cls, obj):
-        if obj:
-            instance_data = {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}
-            return cls(**instance_data)
-        return None
+        if not obj:
+            return None
+
+        dto_fields = {f.name for f in fields(cls)}
+        instance_data = {
+            k: v
+            for k, v in obj.__dict__.items()
+            if k in dto_fields
+        }
+
+        return cls(**instance_data)
 
     @classmethod
     def to_application(cls, obj):

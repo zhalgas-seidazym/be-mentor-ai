@@ -14,9 +14,12 @@ services:
       PYTHONUNBUFFERED: 1
       PYTHONDONTWRITEBYTECODE: 1
     depends_on:
-      - db
-      - redis
-
+      elastic_search:
+        condition: service_healthy
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
   db:
     image: postgres:16
     container_name: mentor_ai_db
@@ -35,7 +38,23 @@ services:
     volumes:
       - redis_data:/data
 
+  elastic_search:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: mentor_ai_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   db_data:
   redis_data:
+  es_data:

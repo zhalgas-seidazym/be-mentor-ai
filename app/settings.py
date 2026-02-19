@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str
     SMTP_FROM: str
 
+    # ---- Elastic Search ----
+    ELASTIC_SEARCH_HOST: str
+
     # ---- OTP ----
     OTP_TTL: int
 

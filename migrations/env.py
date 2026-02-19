@@ -8,6 +8,7 @@ from app.settings import Settings
 from src.infrastructure.dbs.postgre import Base
 
 from src.application.users.models import User
+from src.application.skills.models import Skill
 
 
 

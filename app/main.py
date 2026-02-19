@@ -1,11 +1,25 @@
-from fastapi import FastAPI
+from typing import Annotated
 
+from dependency_injector.wiring import inject, Provide
+from fastapi import FastAPI, Depends
+
+from src.application.skills.interfaces import ISkillSearchService
 from .container import Container
-from src.presentation.routers.user_router import router as ur
+from src.presentation.routers import user_router as ur, skill_router as sr
 
 
 container = Container()
-app = FastAPI()
+app = FastAPI(
+    prefix="/api",
+)
 app.container = container
 
-app.include_router(ur)
+@app.on_event("startup")
+async def startup():
+    skill_search: ISkillSearchService = Container.skill_search_service()
+    # await skill_search.delete_index()
+    check = await skill_search.create_index_if_not_exists()
+    print(check)
+
+app.include_router(ur.router)
+app.include_router(sr.router)
