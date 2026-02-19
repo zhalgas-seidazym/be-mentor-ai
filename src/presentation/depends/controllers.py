@@ -2,10 +2,12 @@ from dependency_injector.wiring import inject, Provide
 from fastapi import Depends
 
 from app.container import Container
+from src.application.skills.controllers import SkillController
+from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService
 from src.application.users.controllers import UserController
 from src.application.users.interfaces import IUserRepository, IEmailOtpService, IUserController
 from src.domain.interfaces import IJWTService, IHashService, IUoW
-from src.presentation.depends.repositories import get_user_repository
+from src.presentation.depends.repositories import get_user_repository, get_skill_repository
 from src.presentation.depends.session import get_uow
 
 
@@ -23,4 +25,14 @@ async def get_user_controller(
         jwt_service=jwt_service,
         hash_service=hash_service,
         uow=uow
+    )
+
+@inject
+async def get_skill_controller(
+        skill_repository: ISkillRepository = Depends(get_skill_repository),
+        skill_search_service: ISkillSearchService = Depends(Provide[Container.skill_search_service]),
+) -> ISkillController:
+    return SkillController(
+        skill_repository=skill_repository,
+        skill_search_service=skill_search_service,
     )

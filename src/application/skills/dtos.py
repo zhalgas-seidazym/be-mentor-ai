@@ -11,5 +11,5 @@ class SkillDTO(BaseDTOMixin):
 
 
 @dataclass
-class PaginationSkillDTO(PaginationDTO):
+class PaginationSkillDTO(PaginationDTO, BaseDTOMixin):
     items: Optional[List[SkillDTO]] = None
