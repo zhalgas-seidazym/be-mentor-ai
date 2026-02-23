@@ -3,8 +3,8 @@ from typing import Dict
 from fastapi import HTTPException, status as s
 
 from src.application.users.dtos import UserDTO
-from src.application.users.interfaces import IUserController, IUserRepository, IEmailOtpService
-from src.domain.interfaces import IUoW, IHashService, IJWTService
+from src.application.users.interfaces import IUserController, IUserRepository, IEmailOtpService, IHashService
+from src.domain.interfaces import IUoW, IJWTService
 from src.domain.value_objects import TokenType
 
 
@@ -102,4 +102,13 @@ class UserController(IUserController):
         return {
             "detail": "OTP verified successfully",
             "password_reset_token": password_reset_token
+        }
+
+    async def reset_password(self, user_data: UserDTO) -> Dict:
+        user_data.password = self._hash_service.hash_password(user_data.password)
+
+        await self._user_repository.update(user_id=user_data.id, user_data=user_data.to_payload(exclude_none=True))
+
+        return {
+            "detail": "Password updated successfully",
         }

@@ -14,7 +14,7 @@ from src.presentation.depends.repositories import get_user_repository
 http_bearer = HTTPBearer()
 
 @inject
-async def get_current_user(
+async def get_access_user(
         token: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer),
         jwt_service: IJWTService = Depends(Provide[Container.jwt_service]),
         user_repo: IUserRepository = Depends(get_user_repository),

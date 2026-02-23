@@ -26,10 +26,3 @@ class IEmailService(Protocol):
         body: str,
         html: bool = False
     ) -> None: ...
-
-class IHashService(Protocol):
-    @staticmethod
-    def hash_password(password: str) -> str: ...
-
-    @staticmethod
-    def verify_password(password: str, hashed_password: str) -> bool: ...

@@ -5,8 +5,10 @@ from pydantic import EmailStr
 
 from src.application.users.dtos import UserDTO
 from src.application.users.interfaces import IUserController
-from src.domain.responses import RESPONSE_404, RESPONSE_409, RESPONSE_400
+from src.domain.base_schema import PasswordSchema
+from src.domain.responses import *
 from src.presentation.depends.controllers import get_user_controller
+from src.presentation.depends.security import get_reset_user
 from src.presentation.schemas.user_schemas import UserRegisterSchema
 
 router = APIRouter(
@@ -154,3 +156,29 @@ async def verify_otp_password_reset(
         code: str = Body(),
 ):
     return await controller.verify_otp_and_password_token(UserDTO(email=email.__str__()), code=code)
+
+@router.post(
+    '/reset-password',
+    status_code=s.HTTP_200_OK,
+    responses={
+        s.HTTP_200_OK: {
+            "description": "Reset password successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Reset password successfully",
+                    }
+                }
+            }
+        },
+        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401
+    }
+)
+async def reset_password(
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        password: PasswordSchema,
+        user: UserDTO = Depends(get_reset_user)
+):
+    user.password = password.dict().get("password")
+    return await controller.reset_password(user_data=user)

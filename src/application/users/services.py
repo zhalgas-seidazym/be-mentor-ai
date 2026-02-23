@@ -2,6 +2,7 @@ import random
 import string
 from typing import Optional
 
+import bcrypt
 from fastapi import HTTPException, status as s
 from redis.asyncio import Redis
 
@@ -41,3 +42,19 @@ class EmailOtpService:
             raise HTTPException(status_code=s.HTTP_400_NOT_FOUND, detail="Incorrect or expired OTP")
 
         await self.redis.delete(redis_key)
+
+class HashService:
+
+    @staticmethod
+    def hash_password(password: str) -> str:
+        return bcrypt.hashpw(
+            password.encode("utf-8"),
+            bcrypt.gensalt(),
+        ).decode("utf-8")
+
+    @staticmethod
+    def verify_password(password: str, hashed_password: str) -> bool:
+        return bcrypt.checkpw(
+            password.encode("utf-8"),
+            hashed_password.encode("utf-8")
+        )

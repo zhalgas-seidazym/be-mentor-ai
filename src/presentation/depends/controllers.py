@@ -5,8 +5,8 @@ from app.container import Container
 from src.application.skills.controllers import SkillController
 from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService
 from src.application.users.controllers import UserController
-from src.application.users.interfaces import IUserRepository, IEmailOtpService, IUserController
-from src.domain.interfaces import IJWTService, IHashService, IUoW
+from src.application.users.interfaces import IUserRepository, IEmailOtpService, IUserController, IHashService
+from src.domain.interfaces import IJWTService, IUoW
 from src.presentation.depends.repositories import get_user_repository, get_skill_repository
 from src.presentation.depends.session import get_uow
 
