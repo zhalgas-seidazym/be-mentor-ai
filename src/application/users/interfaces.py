@@ -30,6 +30,9 @@ class IUserController(ABC):
     @abstractmethod
     async def login(self, user_data: UserDTO) -> Dict: ...
 
+    @abstractmethod
+    async def verify_otp_and_password_token(self, user_data: UserDTO, code: str) -> Dict: ...
+
 class IEmailOtpService(Protocol):
     async def send_otp(self, email: str, ttl: Optional[int] = None) -> None: ...
 

@@ -5,6 +5,7 @@ from fastapi import HTTPException, status as s
 from src.application.users.dtos import UserDTO
 from src.application.users.interfaces import IUserController, IUserRepository, IEmailOtpService
 from src.domain.interfaces import IUoW, IHashService, IJWTService
+from src.domain.value_objects import TokenType
 
 
 class UserController(IUserController):
@@ -38,16 +39,17 @@ class UserController(IUserController):
 
         user_data.password = self._hash_service.hash_password(user_data.password)
 
-        async with self._uow as uow:
+        async with self._uow:
             created = await self._user_repository.add(
                 user_data.to_payload(exclude_none=True)
             )
 
         payload = {
             "user_id": created.id,
+            'type': TokenType.ACCESS.value
         }
-
         access_token = self._jwt_service.encode_token(data=payload)
+        payload['type'] = TokenType.REFRESH.value
         refresh_token = self._jwt_service.encode_token(data=payload, is_access_token=False)
 
         return {
@@ -70,13 +72,34 @@ class UserController(IUserController):
 
         payload = {
             "user_id": user.id,
+            'type': TokenType.ACCESS.value
         }
-
         access_token = self._jwt_service.encode_token(data=payload)
+        payload['type'] = TokenType.REFRESH.value
         refresh_token = self._jwt_service.encode_token(data=payload, is_access_token=False)
 
         return {
             "detail": "Logged in successfully",
             "access_token": access_token,
             "refresh_token": refresh_token,
+        }
+
+    async def verify_otp_and_password_token(self, user_data: UserDTO, code: str) -> Dict:
+        user = await self._user_repository.get_by_email(user_data.email)
+
+        if not user:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"User with {user_data.email} not found")
+
+        await self._email_otp_service.verify_otp(user_data.email, code)
+
+        payload = {
+            "user_id": user.id,
+            'type': TokenType.PASSWORD_RESET.value
+        }
+
+        password_reset_token = self._jwt_service.encode_token(data=payload, expires_delta=5)
+
+        return {
+            "detail": "OTP verified successfully",
+            "password_reset_token": password_reset_token
         }

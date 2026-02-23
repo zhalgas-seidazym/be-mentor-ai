@@ -38,6 +38,6 @@ class EmailOtpService:
         stored_otp = await self.redis.get(redis_key)
 
         if not stored_otp or stored_otp != code:
-            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Incorrect or expired OTP")
+            raise HTTPException(status_code=s.HTTP_400_NOT_FOUND, detail="Incorrect or expired OTP")
 
         await self.redis.delete(redis_key)

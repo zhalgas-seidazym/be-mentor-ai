@@ -21,7 +21,7 @@ router = APIRouter(
     }
 )
 async def skill_autocomplete(
-        controller: Annotated[ISkillController, Depends(get_skill_controller)] ,
+        controller: Annotated[ISkillController, Depends(get_skill_controller)],
         q: Optional[str] = Query(None),
         per_page: Optional[int] = Query(None),
         page: Optional[int] = Query(None)

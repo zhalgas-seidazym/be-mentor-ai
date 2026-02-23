@@ -80,7 +80,7 @@ async def get_reset_user(
 
     payload = jwt_service.decode_token(token.credentials)
 
-    if payload.get("type") != "password_reset":
+    if payload.get("type") != TokenType.PASSWORD_RESET.value:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid reset token")
 
     exp = payload.get("exp")

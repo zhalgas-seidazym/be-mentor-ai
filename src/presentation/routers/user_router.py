@@ -5,7 +5,7 @@ from pydantic import EmailStr
 
 from src.application.users.dtos import UserDTO
 from src.application.users.interfaces import IUserController
-from src.domain.responses import RESPONSE_404
+from src.domain.responses import RESPONSE_404, RESPONSE_409, RESPONSE_400
 from src.presentation.depends.controllers import get_user_controller
 from src.presentation.schemas.user_schemas import UserRegisterSchema
 
@@ -72,6 +72,16 @@ async def send_otp(
                     }
                 }
             }
+        },
+        s.HTTP_409_CONFLICT: {
+            "description": "User already exists",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "User already exists"
+                    }
+                }
+            }
         }
     }
 )
@@ -118,3 +128,29 @@ async def login(
         password: str = Body(),
 ):
     return await controller.login(user_data=UserDTO(email=email.__str__(), password=password))
+
+@router.post(
+    '/verify-otp/password-reset-token',
+    status_code=s.HTTP_200_OK,
+    responses={
+        s.HTTP_200_OK: {
+            "description": "Token for reset password",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Otp verified successfully",
+                        "password_reset_token": "token",
+                    }
+                }
+            }
+        },
+        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    }
+)
+async def verify_otp_password_reset(
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        email: EmailStr = Body(),
+        code: str = Body(),
+):
+    return await controller.verify_otp_and_password_token(UserDTO(email=email.__str__()), code=code)
