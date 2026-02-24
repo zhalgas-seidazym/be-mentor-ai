@@ -9,7 +9,7 @@ from src.domain.base_schema import PasswordSchema
 from src.domain.responses import *
 from src.presentation.depends.controllers import get_user_controller
 from src.presentation.depends.security import get_reset_user, get_refresh_user
-from src.presentation.schemas.user_schemas import UserRegisterSchema
+from src.presentation.schemas.users_schema import UserRegisterSchema
 
 router = APIRouter(
     prefix="/user",

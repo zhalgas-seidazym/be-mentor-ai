@@ -4,13 +4,14 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from src.application.locations.interfaces import ICountryRepository, ICityRepository
 from src.application.locations.models import Country, City
 from src.application.locations.dtos import CountryDTO, CityDTO
 from src.application.locations.mappers import country_orm_to_dto, city_orm_to_dto
 from src.domain.base_dto import PaginationDTO
 
 
-class CountryRepository:
+class CountryRepository(ICountryRepository):
 
     def __init__(self, session: AsyncSession):
         self._session = session
@@ -68,7 +69,9 @@ class CountryRepository:
             total=total,
             items=items,
         )
-class CityRepository:
+
+
+class CityRepository(ICityRepository):
 
     def __init__(self, session: AsyncSession):
         self._session = session

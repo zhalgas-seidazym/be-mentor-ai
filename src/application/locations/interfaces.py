@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Dict
 
 from src.application.locations.dtos import CountryDTO, CityDTO
 from src.domain.base_dto import PaginationDTO
@@ -57,3 +57,7 @@ class ICityRepository(ABC):
         populate_country: bool = False,
     ) -> PaginationDTO[CityDTO]:
         ...
+
+class ILocationController(ABC):
+    @abstractmethod
+    async def get_countries_by_name(self, pagination: PaginationDTO[CountryDTO], q: Optional[str]) -> Dict: ...

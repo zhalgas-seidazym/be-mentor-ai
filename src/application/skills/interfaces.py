@@ -59,5 +59,5 @@ class ISkillSearchService(ABC):
     async def search(
         self,
         name: Optional[str] = None,
-        pagination: Optional[Dict[str, Any]] = None,
+        pagination: Optional[PaginationDTO[SkillDTO]] = None,
     ) -> PaginationDTO[SkillDTO]: ...

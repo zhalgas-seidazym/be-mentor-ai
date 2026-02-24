@@ -5,7 +5,7 @@ from fastapi import FastAPI, Depends
 
 from src.application.skills.interfaces import ISkillSearchService
 from .container import Container
-from src.presentation.routers import user_router as ur, skill_router as sr
+from src.presentation.routers import users_router as ur, skills_router as sr, locations_router as lr
 
 
 container = Container()
@@ -23,3 +23,4 @@ async def startup():
 
 app.include_router(ur.router)
 app.include_router(sr.router)
+app.include_router(lr.router)

@@ -1,6 +1,6 @@
 import re
 from inspect import Signature, Parameter
-from typing import Any, Optional, Literal, List
+from typing import Any, Optional, Literal
 
 from fastapi import Form, Query, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
@@ -79,4 +79,3 @@ class SortSchema(BaseSchema):
 class PaginationSchema(BaseSchema):
     page: int = 1
     per_page: int = 10
-    total: Optional[int] = None
