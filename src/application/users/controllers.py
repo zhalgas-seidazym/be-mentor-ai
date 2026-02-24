@@ -41,7 +41,7 @@ class UserController(IUserController):
 
         async with self._uow:
             created = await self._user_repository.add(
-                user_data.to_payload(exclude_none=True)
+                user_data
             )
 
         payload = {
@@ -107,7 +107,7 @@ class UserController(IUserController):
     async def reset_password(self, user_data: UserDTO) -> Dict:
         user_data.password = self._hash_service.hash_password(user_data.password)
 
-        await self._user_repository.update(user_id=user_data.id, user_data=user_data.to_payload(exclude_none=True))
+        await self._user_repository.update(user_id=user_data.id, dto=user_data)
 
         return {
             "detail": "Password updated successfully",

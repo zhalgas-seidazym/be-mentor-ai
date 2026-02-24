@@ -1,7 +1,8 @@
 from typing import Optional
 
-from src.application.skills.dtos import PaginationSkillDTO
+from src.application.skills.dtos import SkillDTO
 from src.application.skills.interfaces import ISkillController, ISkillSearchService, ISkillRepository
+from src.domain.base_dto import PaginationDTO
 
 
 class SkillController(ISkillController):
@@ -13,17 +14,17 @@ class SkillController(ISkillController):
         self._skill_repository = skill_repository
         self._skill_search_service = skill_search_service
 
-    async def skill_autocomplete(self, pagination: PaginationSkillDTO, q: Optional[str] = None) -> PaginationSkillDTO:
+    async def skill_autocomplete(self, pagination: PaginationDTO[SkillDTO], q: Optional[str] = None) -> PaginationDTO[SkillDTO]:
         count = await self._skill_search_service.count()
 
         if count < 1:
             total = await self._skill_repository.get()
             total = total.total
 
-            skills = await self._skill_repository.get(pagination=PaginationSkillDTO(per_page=total).to_payload(exclude_none=True))
+            skills = await self._skill_repository.get(pagination=PaginationDTO[SkillDTO](per_page=total))
             skills = skills.items
 
             await self._skill_search_service.bulk_index(skills)
 
-        res = await self._skill_search_service.search(pagination=pagination.to_payload(exclude_none=True), name=q)
+        res = await self._skill_search_service.search(pagination=pagination, name=q)
         return res

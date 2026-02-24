@@ -1,0 +1,26 @@
+from typing import Optional
+
+from src.application.skills.dtos import SkillDTO
+from src.application.skills.models import Skill
+
+
+def orm_to_dto(row: Optional[Skill]) -> Optional[SkillDTO]:
+    if not row:
+        return None
+
+    return SkillDTO(
+        id=row.id,
+        name=row.name,
+    )
+
+
+def dto_to_orm(dto: SkillDTO, row: Optional[Skill] = None) -> Skill:
+    row = row or Skill()
+
+    if dto.id is not None:
+        row.id = dto.id
+
+    if dto.name is not None:
+        row.name = dto.name
+
+    return row

@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
 
-from src.application.skills.dtos import SkillDTO, PaginationSkillDTO
+from src.application.skills.dtos import SkillDTO
+from src.domain.base_dto import PaginationDTO
 
 
 class ISkillRepository(ABC):
@@ -16,7 +17,7 @@ class ISkillRepository(ABC):
             self,
             name: Optional[str] = None,
             pagination: Optional[Dict[str, Any]] = None,
-    ) -> PaginationSkillDTO: ...
+    ) -> PaginationDTO[SkillDTO]: ...
 
     @abstractmethod
     async def add(self, name: str) -> Optional[SkillDTO]: ...
@@ -33,7 +34,7 @@ class ISkillRepository(ABC):
 
 class ISkillController(ABC):
     @abstractmethod
-    async def skill_autocomplete(self, pagination: PaginationSkillDTO, q: Optional[str] = None) -> PaginationSkillDTO:  ...
+    async def skill_autocomplete(self, pagination: PaginationDTO[SkillDTO], q: Optional[str] = None) -> PaginationDTO[SkillDTO]:  ...
 
 class ISkillSearchService(ABC):
 
@@ -60,4 +61,4 @@ class ISkillSearchService(ABC):
         self,
         name: Optional[str] = None,
         pagination: Optional[Dict[str, Any]] = None,
-    ) -> PaginationSkillDTO: ...
+    ) -> PaginationDTO[SkillDTO]: ...

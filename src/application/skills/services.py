@@ -3,7 +3,8 @@ from typing import Optional, Dict, Any, List
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
-from src.application.skills.dtos import SkillDTO, PaginationSkillDTO
+from src.application.skills.dtos import SkillDTO
+from src.domain.base_dto import PaginationDTO
 
 
 class SkillSearchService:
@@ -131,15 +132,15 @@ class SkillSearchService:
     # SEARCH
     # -----------------------------
     async def search(
-        self,
-        name: Optional[str] = None,
-        pagination: Optional[Dict[str, Any]] = None,
-    ) -> PaginationSkillDTO:
+            self,
+            name: Optional[str] = None,
+            pagination: Optional[PaginationDTO[SkillDTO]] = None,
+    ) -> PaginationDTO[SkillDTO]:
 
-        pagination = pagination or {}
+        pagination = pagination or PaginationDTO[SkillDTO]()
 
-        page = max(int(pagination.get("page", 1)), 1)
-        per_page = max(int(pagination.get("per_page", 10)), 1)
+        page = max(pagination.page or 1, 1)
+        per_page = max(pagination.per_page or 10, 1)
 
         from_value = (page - 1) * per_page
 
@@ -153,12 +154,11 @@ class SkillSearchService:
             query_body["query"] = {
                 "bool": {
                     "should": [
-                        # Автокомплит + inside search
                         {
                             "match": {
                                 "name": {
                                     "query": name,
-                                    "fuzziness": "AUTO"
+                                    "fuzziness": "AUTO",
                                 }
                             }
                         }
@@ -168,7 +168,7 @@ class SkillSearchService:
 
         response = await self._es.search(
             index=self.INDEX_NAME,
-            body=query_body
+            body=query_body,
         )
 
         total = response["hits"]["total"]["value"]
@@ -182,7 +182,7 @@ class SkillSearchService:
             for hit in hits
         ]
 
-        return PaginationSkillDTO(
+        return PaginationDTO[SkillDTO](
             page=page,
             per_page=per_page,
             total=total,

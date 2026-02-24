@@ -1,15 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional, List
-
-from src.domain.base_dto import BaseDTOMixin, PaginationDTO
+from typing import Optional
 
 
 @dataclass
-class SkillDTO(BaseDTOMixin):
+class SkillDTO:
     id: Optional[int] = None
     name: Optional[str] = None
-
-
-@dataclass
-class PaginationSkillDTO(PaginationDTO, BaseDTOMixin):
-    items: Optional[List[SkillDTO]] = None
