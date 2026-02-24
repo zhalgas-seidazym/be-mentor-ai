@@ -1,51 +1,64 @@
-from typing import Optional, Any, Dict
+from typing import Optional
 
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.users.dtos import UserDTO
 from src.application.users.interfaces import IUserRepository
 from src.application.users.models import User
+from src.application.users.mappers import orm_to_dto, dto_to_orm
 
 
 class UserRepository(IUserRepository):
+
     def __init__(self, session: AsyncSession):
         self._session = session
 
+    async def _fetch_one(self, query) -> Optional[UserDTO]:
+        result = await self._session.execute(query)
+        row = result.scalar_one_or_none()
+        return orm_to_dto(row)
+
     async def get_by_id(self, user_id: int) -> Optional[UserDTO]:
         query = select(User).where(User.id == user_id)
-        result = await self._session.execute(query)
-        orm = result.scalar_one_or_none()
-        return UserDTO.to_application(orm) if orm else None
+        return await self._fetch_one(query)
 
     async def get_by_email(self, email: str) -> Optional[UserDTO]:
         query = select(User).where(User.email == email)
-        result = await self._session.execute(query)
-        orm = result.scalar_one_or_none()
-        return UserDTO.to_application(orm) if orm else None
+        return await self._fetch_one(query)
 
-    async def add(self, user_data: Dict[str, Any]) -> Optional[UserDTO]:
-        query = insert(User).values(**user_data).returning(User)
-        result = await self._session.execute(query)
-        orm = result.scalar_one_or_none()
-        return UserDTO.to_application(orm) if orm else None
+    async def add(self, dto: UserDTO) -> Optional[UserDTO]:
+        row = dto_to_orm(dto)
 
-    async def update(self, user_id: int, user_data: Dict[str, Any]) -> Optional[UserDTO]:
-        if not user_data:
-            return await self.get_by_id(user_id)
+        self._session.add(row)
 
-        query = (
-            update(User)
-            .where(User.id == user_id)
-            .values(**user_data)
-            .returning(User)
-        )
-        result = await self._session.execute(query)
-        orm = result.scalar_one_or_none()
-        return UserDTO.to_application(orm) if orm else None
+        await self._session.flush()
+        await self._session.refresh(row)
 
-    async def delete(self, user_id: int) -> Optional[bool]:
-        query = delete(User).where(User.id == user_id).returning(User.id)
+        return orm_to_dto(row)
+
+    async def update(self, user_id: int, dto: UserDTO) -> Optional[UserDTO]:
+        query = select(User).where(User.id == user_id)
         result = await self._session.execute(query)
-        delete_id = result.scalar_one_or_none()
-        return delete_id is not None
+        row = result.scalar_one_or_none()
+
+        if not row:
+            return None
+
+        row = dto_to_orm(dto, row)
+
+        await self._session.flush()
+        await self._session.refresh(row)
+
+        return orm_to_dto(row)
+
+    async def delete(self, user_id: int) -> bool:
+        query = select(User).where(User.id == user_id)
+        result = await self._session.execute(query)
+        row = result.scalar_one_or_none()
+
+        if not row:
+            return False
+
+        await self._session.delete(row)
+        return True

@@ -6,6 +6,9 @@ from src.application.users.dtos import UserDTO
 
 class IUserRepository(ABC):
     @abstractmethod
+    async def _fetch_one(self, query) -> Optional[UserDTO]: ...
+
+    @abstractmethod
     async def get_by_id(self, user_id: int) -> Optional[UserDTO]: ...
 
     @abstractmethod
