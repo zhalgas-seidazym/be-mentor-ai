@@ -112,3 +112,20 @@ class UserController(IUserController):
         return {
             "detail": "Password updated successfully",
         }
+
+    async def refresh_token(self, user_data: UserDTO) -> Dict:
+        payload = {
+            "user_id": user_data.id,
+            'type': TokenType.ACCESS.value
+        }
+
+        access_token = self._jwt_service.encode_token(data=payload)
+        payload['type'] = TokenType.REFRESH.value
+        refresh_token = self._jwt_service.encode_token(data=payload, is_access_token=False)
+
+
+        return {
+            "detail": "Refreshed token successfully",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }

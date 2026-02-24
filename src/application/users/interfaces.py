@@ -36,6 +36,9 @@ class IUserController(ABC):
     @abstractmethod
     async def reset_password(self, user_data: UserDTO) -> Dict: ...
 
+    @abstractmethod
+    async def refresh_token(self, user_data: UserDTO) -> Dict: ...
+
 class IEmailOtpService(Protocol):
     async def send_otp(self, email: str, ttl: Optional[int] = None) -> None: ...
 

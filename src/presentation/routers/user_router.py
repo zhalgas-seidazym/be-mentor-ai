@@ -8,7 +8,7 @@ from src.application.users.interfaces import IUserController
 from src.domain.base_schema import PasswordSchema
 from src.domain.responses import *
 from src.presentation.depends.controllers import get_user_controller
-from src.presentation.depends.security import get_reset_user
+from src.presentation.depends.security import get_reset_user, get_refresh_user
 from src.presentation.schemas.user_schemas import UserRegisterSchema
 
 router = APIRouter(
@@ -182,3 +182,28 @@ async def reset_password(
 ):
     user.password = password.dict().get("password")
     return await controller.reset_password(user_data=user)
+
+@router.post(
+    '/refresh-token',
+    status_code=s.HTTP_200_OK,
+    responses={
+        s.HTTP_200_OK: {
+            "description": "Refreshed token successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Refreshed token successfully",
+                        "access_token": "token",
+                        "refresh_token": "token"
+                    }
+                }
+            }
+        },
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+    }
+)
+async def refresh_token(
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        user: UserDTO = Depends(get_refresh_user)
+):
+    return await controller.refresh_token(user)
