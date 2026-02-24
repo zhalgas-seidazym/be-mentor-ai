@@ -14,17 +14,20 @@ class UserRepository(IUserRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
+    def _base_query(self):
+        return select(User)
+
     async def _fetch_one(self, query) -> Optional[UserDTO]:
         result = await self._session.execute(query)
         row = result.scalar_one_or_none()
-        return orm_to_dto(row)
+        return orm_to_dto(row) if row else None
 
     async def get_by_id(self, user_id: int) -> Optional[UserDTO]:
-        query = select(User).where(User.id == user_id)
+        query = self._base_query().where(User.id == user_id)
         return await self._fetch_one(query)
 
     async def get_by_email(self, email: str) -> Optional[UserDTO]:
-        query = select(User).where(User.email == email)
+        query = self._base_query().where(User.email == email)
         return await self._fetch_one(query)
 
     async def add(self, dto: UserDTO) -> Optional[UserDTO]:
@@ -38,7 +41,7 @@ class UserRepository(IUserRepository):
         return orm_to_dto(row)
 
     async def update(self, user_id: int, dto: UserDTO) -> Optional[UserDTO]:
-        query = select(User).where(User.id == user_id)
+        query = self._base_query().where(User.id == user_id)
         result = await self._session.execute(query)
         row = result.scalar_one_or_none()
 
@@ -53,7 +56,7 @@ class UserRepository(IUserRepository):
         return orm_to_dto(row)
 
     async def delete(self, user_id: int) -> bool:
-        query = select(User).where(User.id == user_id)
+        query = self._base_query().where(User.id == user_id)
         result = await self._session.execute(query)
         row = result.scalar_one_or_none()
 

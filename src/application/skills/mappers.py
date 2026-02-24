@@ -4,10 +4,7 @@ from src.application.skills.dtos import SkillDTO
 from src.application.skills.models import Skill
 
 
-def orm_to_dto(row: Optional[Skill]) -> Optional[SkillDTO]:
-    if not row:
-        return None
-
+def orm_to_dto(row: Skill) -> Optional[SkillDTO]:
     return SkillDTO(
         id=row.id,
         name=row.name,

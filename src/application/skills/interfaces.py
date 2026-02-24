@@ -6,7 +6,6 @@ from src.domain.base_dto import PaginationDTO
 
 
 class ISkillRepository(ABC):
-
     @abstractmethod
     async def get_by_id(self, skill_id: int) -> Optional[SkillDTO]: ...
 

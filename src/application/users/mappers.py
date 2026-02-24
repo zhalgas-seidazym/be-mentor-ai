@@ -5,9 +5,6 @@ from src.application.users.models import User
 
 
 def orm_to_dto(row: User) -> Optional[UserDTO]:
-    if not row:
-        return None
-
     return UserDTO(
         id=row.id,
         email=row.email,
