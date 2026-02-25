@@ -73,3 +73,6 @@ class ILocationController(ABC):
             country_id: Optional[int],
             populate_country: bool = False,
     ) -> PaginationDTO[CityDTO]: ...
+
+    @abstractmethod
+    async def get_city_by_id(self, city_id: int, populate_country: bool = False) -> Optional[CityDTO]: ...
