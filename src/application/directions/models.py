@@ -33,6 +33,11 @@ class Direction(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="direction",
+    )
+
 
 class Salary(Base, TimestampMixin):
     __tablename__ = "salaries"

@@ -39,6 +39,11 @@ class User(Base, TimestampMixin):
 
     # --- Career ---
 
+    direction_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("directions.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     # --- Region ---
 
     city_id: Mapped[Optional[int]] = mapped_column(
@@ -59,13 +64,14 @@ class User(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
+    direction: Mapped[Optional["Direction"]] = relationship(
+        "Direction",
+        back_populates="users",
+    )
+
 
 class UserSkill(Base):
     __tablename__ = "user_skills"
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "skill_id", name="uq_user_skill"),
-    )
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),

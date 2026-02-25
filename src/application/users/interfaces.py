@@ -13,6 +13,7 @@ class IUserRepository(ABC):
         user_id: int,
         populate_city: bool = False,
         populate_skills: bool = False,
+        populate_direction: bool = False,
     ) -> Optional[UserDTO]: ...
 
     @abstractmethod
@@ -21,6 +22,7 @@ class IUserRepository(ABC):
         email: str,
         populate_city: bool = False,
         populate_skills: bool = False,
+        populate_direction: bool = False,
     ) -> Optional[UserDTO]: ...
 
     @abstractmethod

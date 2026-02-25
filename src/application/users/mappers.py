@@ -3,6 +3,7 @@ from typing import Optional
 from sqlalchemy import inspect
 from sqlalchemy.orm import NO_VALUE
 
+from src.application.directions.mappers import direction_orm_to_dto
 from src.application.locations.mappers import city_orm_to_dto
 from src.application.skills.mappers import skill_orm_to_dto
 from src.application.users.dtos import UserDTO, UserSkillDTO
@@ -13,18 +14,26 @@ def user_orm_to_dto(
     row: User,
     populate_city: bool = False,
     populate_skills: bool = False,
+    populate_direction: bool = False,
 ) -> Optional[UserDTO]:
+
+    state = inspect(row)
 
     city_dto = None
     skills_dto = None
-
-    state = inspect(row)
+    direction_dto = None
 
     # --- City ---
     if populate_city:
         city_loaded = state.attrs.city.loaded_value
         if city_loaded is not None and city_loaded is not NO_VALUE:
             city_dto = city_orm_to_dto(city_loaded)
+
+    # --- Direction ---
+    if populate_direction:
+        direction_loaded = state.attrs.direction.loaded_value
+        if direction_loaded is not None and direction_loaded is not NO_VALUE:
+            direction_dto = direction_orm_to_dto(direction_loaded)
 
     # --- Skills ---
     if populate_skills:
@@ -34,7 +43,7 @@ def user_orm_to_dto(
             skills_dto = [
                 user_skill_orm_to_dto(
                     us,
-                    populate_skill=True
+                    populate_skill=True,
                 )
                 for us in skills_loaded
             ]
@@ -45,14 +54,20 @@ def user_orm_to_dto(
         password=row.password,
         name=row.name,
         city_id=row.city_id,
-        city=city_dto,
-        skills=skills_dto,
+        direction_id=row.direction_id,
         is_onboarding_completed=row.is_onboarding_completed,
+        skills=skills_dto,
+        direction=direction_dto,
+        city=city_dto,
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
 
-def user_dto_to_orm(dto: UserDTO, row: Optional[User] = None) -> User:
+def user_dto_to_orm(
+    dto: UserDTO,
+    row: Optional[User] = None,
+) -> User:
+
     row = row or User()
 
     if dto.id is not None:
@@ -63,6 +78,7 @@ def user_dto_to_orm(dto: UserDTO, row: Optional[User] = None) -> User:
         "password": dto.password,
         "name": dto.name,
         "city_id": dto.city_id,
+        "direction_id": dto.direction_id,
         "is_onboarding_completed": dto.is_onboarding_completed,
     }
 

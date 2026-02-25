@@ -20,12 +20,18 @@ class UserRepository(IUserRepository):
             self,
             populate_city: bool = False,
             populate_skills: bool = False,
+            populate_direction: bool = False,
     ):
         query = select(User)
 
         if populate_city:
             query = query.options(
                 selectinload(User.city)
+            )
+
+        if populate_direction:
+            query = query.options(
+                selectinload(User.direction)
             )
 
         if populate_skills:
@@ -41,6 +47,7 @@ class UserRepository(IUserRepository):
             query,
             populate_city: bool,
             populate_skills: bool,
+            populate_direction: bool,
     ) -> Optional[UserDTO]:
 
         result = await self._session.execute(query)
@@ -51,6 +58,7 @@ class UserRepository(IUserRepository):
                 row,
                 populate_city=populate_city,
                 populate_skills=populate_skills,
+                populate_direction=populate_direction,
             )
             if row
             else None
@@ -61,17 +69,20 @@ class UserRepository(IUserRepository):
             user_id: int,
             populate_city: bool = False,
             populate_skills: bool = False,
+            populate_direction: bool = False,
     ) -> Optional[UserDTO]:
 
         query = self._base_query(
             populate_city=populate_city,
             populate_skills=populate_skills,
+            populate_direction=populate_direction,
         ).where(User.id == user_id)
 
         return await self._fetch_one(
             query,
             populate_city,
             populate_skills,
+            populate_direction,
         )
 
     async def get_by_email(
@@ -79,17 +90,20 @@ class UserRepository(IUserRepository):
             email: str,
             populate_city: bool = False,
             populate_skills: bool = False,
+            populate_direction: bool = False,
     ) -> Optional[UserDTO]:
 
         query = self._base_query(
             populate_city=populate_city,
             populate_skills=populate_skills,
+            populate_direction=populate_direction,
         ).where(User.email == email)
 
         return await self._fetch_one(
             query,
             populate_city,
             populate_skills,
+            populate_direction,
         )
 
     async def add(self, dto: UserDTO) -> Optional[UserDTO]:
