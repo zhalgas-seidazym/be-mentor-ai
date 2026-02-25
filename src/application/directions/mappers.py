@@ -1,4 +1,3 @@
-# directions/mappers.py
 from typing import Optional
 
 from sqlalchemy import inspect
@@ -74,3 +73,27 @@ def salary_orm_to_dto(
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
+
+def salary_dto_to_orm(
+    dto: SalaryDTO,
+    row: Optional[Salary] = None,
+) -> Salary:
+
+    row = row or Salary()
+
+    if dto.id is not None:
+        row.id = dto.id
+
+    if dto.direction_id is not None:
+        row.direction_id = dto.direction_id
+
+    if dto.city_id is not None:
+        row.city_id = dto.city_id
+
+    if dto.amount is not None:
+        row.amount = dto.amount
+
+    if dto.currency is not None:
+        row.currency = dto.currency
+
+    return row
