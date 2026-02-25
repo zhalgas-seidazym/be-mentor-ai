@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,7 +25,7 @@ class User(Base, TimestampMixin):
     )
 
     # --- Profile ---
-    name: Mapped[str | None] = mapped_column(
+    name: Mapped[Optional[str]] = mapped_column(
         String,
         nullable=True,
     )
@@ -39,4 +41,14 @@ class User(Base, TimestampMixin):
 
     # --- Region ---
 
+    city_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("cities.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     # --- Relations ---
+    city: Mapped[Optional["City"]] = relationship(
+        "City",
+        back_populates="users",
+        lazy="selectin",
+    )

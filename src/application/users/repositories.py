@@ -2,6 +2,7 @@ from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.application.users.dtos import UserDTO
 from src.application.users.interfaces import IUserRepository
@@ -14,21 +15,34 @@ class UserRepository(IUserRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    def _base_query(self):
-        return select(User)
+    def _base_query(self, populate_city: bool = False):
+        query = select(User)
 
-    async def _fetch_one(self, query) -> Optional[UserDTO]:
+        if populate_city:
+            query = query.options(
+                selectinload(User.city)
+            )
+
+        return query
+
+    async def _fetch_one(self, query, populate_city: bool) -> Optional[UserDTO]:
         result = await self._session.execute(query)
         row = result.scalar_one_or_none()
-        return orm_to_dto(row) if row else None
+        return orm_to_dto(row, populate_city=populate_city) if row else None
 
-    async def get_by_id(self, user_id: int) -> Optional[UserDTO]:
-        query = self._base_query().where(User.id == user_id)
-        return await self._fetch_one(query)
+    async def get_by_id(
+            self, user_id: int,populate_city: bool = False,
+    ) -> Optional[UserDTO]:
 
-    async def get_by_email(self, email: str) -> Optional[UserDTO]:
-        query = self._base_query().where(User.email == email)
-        return await self._fetch_one(query)
+        query = self._base_query(populate_city).where(User.id == user_id)
+        return await self._fetch_one(query, populate_city)
+
+    async def get_by_email(
+            self, email: str, populate_city: bool = False,
+    ) -> Optional[UserDTO]:
+
+        query = self._base_query(populate_city).where(User.email == email)
+        return await self._fetch_one(query, populate_city)
 
     async def add(self, dto: UserDTO) -> Optional[UserDTO]:
         row = dto_to_orm(dto)

@@ -54,3 +54,8 @@ class City(Base, TimestampMixin):
     country: Mapped["Country"] = relationship(
         back_populates="cities"
     )
+
+    users: Mapped[list["User"]] = relationship(
+        "User",
+        back_populates="city",
+    )

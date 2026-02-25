@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, status as s, HTTPException, Query, Depends
+from fastapi import APIRouter, status as s, Query, Depends
 
 from src.application.locations.dtos import CountryDTO, CityDTO
 from src.application.locations.interfaces import ILocationController
