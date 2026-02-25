@@ -38,6 +38,9 @@ class ISkillController(ABC):
     @abstractmethod
     async def get_by_id(self, skill_id: int) -> Optional[SkillDTO]: ...
 
+    @abstractmethod
+    async def create(self, name: str) -> Dict: ...
+
 class ISkillSearchService(ABC):
 
     @abstractmethod

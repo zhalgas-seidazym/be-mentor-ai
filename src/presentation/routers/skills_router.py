@@ -1,18 +1,39 @@
 from typing import Optional, Annotated
 
-from fastapi import APIRouter, status as s, Query, Depends
+from fastapi import APIRouter, status as s, Query, Depends, Body
 
 from src.application.skills.dtos import SkillDTO
 from src.application.skills.interfaces import ISkillController
+from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
 from src.domain.base_schema import PaginationSchema
-from src.domain.responses import RESPONSE_404, RESPONSE_401
+from src.domain.responses import RESPONSE_404, RESPONSE_401, RESPONSE_409
 from src.presentation.depends.controllers import get_skill_controller
+from src.presentation.depends.security import get_access_user
 
 router = APIRouter(
     prefix="/skill",
     tags=["skill"]
 )
+
+@router.post(
+    '',
+    response_model={
+        'detail': 'Skill created successfully',
+        'skill': SkillDTO,
+    },
+    status_code=s.HTTP_201_CREATED,
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_409_CONFLICT: RESPONSE_409
+    }
+)
+async def create_skill(
+        controller: Annotated[ISkillController, Depends(get_skill_controller)],
+        name: str = Body(),
+        user: UserDTO = Depends(get_access_user)
+):
+    return await controller.create(name)
 
 @router.get(
     '/autocomplete',

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 
 from fastapi import HTTPException, status as s
 
@@ -38,3 +38,17 @@ class SkillController(ISkillController):
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Skill {skill_id} not found")
 
         return res
+
+    async def create(self, name: str) -> Dict:
+        skill = await self._skill_repository.get_by_name(name)
+
+        if skill:
+            raise HTTPException(status_code=s.HTTP_409_CONFLICT, detail=f"Skill {name} already exists")
+
+        skill = await self._skill_repository.add(name)
+        await self._skill_search_service.index(skill_id=skill.id, name=name)
+
+        return {
+            "detail": f"Skill {name} created successfully",
+            "skill": skill,
+        }
