@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.skills.dtos import SkillDTO
 from src.application.skills.interfaces import ISkillRepository
 from src.application.skills.models import Skill
-from src.application.skills.mappers import orm_to_dto, dto_to_orm
+from src.application.skills.mappers import skill_orm_to_dto, skill_dto_to_orm
 from src.domain.base_dto import PaginationDTO
 
 
@@ -21,7 +21,7 @@ class SkillRepository(ISkillRepository):
     async def _fetch_one(self, query) -> Optional[SkillDTO]:
         result = await self._session.execute(query)
         row = result.scalar_one_or_none()
-        return orm_to_dto(row) if row else None
+        return skill_orm_to_dto(row) if row else None
 
     async def get_by_id(self, skill_id: int) -> Optional[SkillDTO]:
         query = self._base_query().where(Skill.id == skill_id)
@@ -63,7 +63,7 @@ class SkillRepository(ISkillRepository):
         rows = result.scalars().all()
 
         items: List[SkillDTO] = [
-            orm_to_dto(row) for row in rows
+            skill_orm_to_dto(row) for row in rows
         ]
 
         return PaginationDTO[SkillDTO](
@@ -74,14 +74,14 @@ class SkillRepository(ISkillRepository):
         )
 
     async def add(self, dto: SkillDTO) -> Optional[SkillDTO]:
-        row = dto_to_orm(dto)
+        row = skill_dto_to_orm(dto)
 
         self._session.add(row)
 
         await self._session.flush()
         await self._session.refresh(row)
 
-        return orm_to_dto(row)
+        return skill_orm_to_dto(row)
 
     async def update(
         self,
@@ -98,12 +98,12 @@ class SkillRepository(ISkillRepository):
         if not row:
             return None
 
-        row = dto_to_orm(dto, row)
+        row = skill_dto_to_orm(dto, row)
 
         await self._session.flush()
         await self._session.refresh(row)
 
-        return orm_to_dto(row)
+        return skill_orm_to_dto(row)
 
     async def delete(self, skill_id: int) -> bool:
         query = self._base_query().where(

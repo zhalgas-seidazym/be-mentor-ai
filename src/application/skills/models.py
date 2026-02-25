@@ -1,5 +1,5 @@
 from sqlalchemy import Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infrastructure.dbs.postgre import Base
 from src.domain.base_model import TimestampMixin
@@ -19,4 +19,10 @@ class Skill(Base, TimestampMixin):
         unique=True,
         index=True,
         nullable=False
+    )
+
+    user_skills: Mapped[list["UserSkill"]] = relationship(
+        "UserSkill",
+        back_populates="skill",
+        cascade="all, delete-orphan",
     )
