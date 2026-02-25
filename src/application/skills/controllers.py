@@ -1,5 +1,7 @@
 from typing import Optional
 
+from fastapi import HTTPException, status as s
+
 from src.application.skills.dtos import SkillDTO
 from src.application.skills.interfaces import ISkillController, ISkillSearchService, ISkillRepository
 from src.domain.base_dto import PaginationDTO
@@ -27,4 +29,12 @@ class SkillController(ISkillController):
             await self._skill_search_service.bulk_index(skills)
 
         res = await self._skill_search_service.search(pagination=pagination, name=q)
+        return res
+
+    async def get_by_id(self, skill_id: int) -> Optional[SkillDTO]:
+        res = await self._skill_repository.get_by_id(skill_id)
+
+        if res is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Skill {skill_id} not found")
+
         return res

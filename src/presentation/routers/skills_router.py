@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 @router.get(
-    '/skill/autocomplete',
+    '/autocomplete',
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[SkillDTO],
     responses={
@@ -28,3 +28,17 @@ async def skill_autocomplete(
         pagination: PaginationSchema = Depends(PaginationSchema.as_query())
 ):
     return await controller.skill_autocomplete(PaginationDTO[SkillDTO](**pagination.dict()), q=q)
+
+@router.get(
+    '/{skill_id}',
+    status_code=s.HTTP_200_OK,
+    response_model=SkillDTO,
+    responses={
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    }
+)
+async def get_skill_by_id(
+        controller: Annotated[ISkillController, Depends(get_skill_controller)],
+        skill_id: int,
+):
+    return await controller.get_by_id(skill_id)

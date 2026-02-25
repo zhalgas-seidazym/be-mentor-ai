@@ -35,6 +35,9 @@ class ISkillController(ABC):
     @abstractmethod
     async def skill_autocomplete(self, pagination: PaginationDTO[SkillDTO], q: Optional[str] = None) -> PaginationDTO[SkillDTO]:  ...
 
+    @abstractmethod
+    async def get_by_id(self, skill_id: int) -> Optional[SkillDTO]: ...
+
 class ISkillSearchService(ABC):
 
     @abstractmethod
