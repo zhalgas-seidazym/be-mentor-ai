@@ -60,4 +60,15 @@ class ICityRepository(ABC):
 
 class ILocationController(ABC):
     @abstractmethod
-    async def get_countries_by_name(self, pagination: PaginationDTO[CountryDTO], q: Optional[str]) -> Dict: ...
+    async def get_countries_by_name(self, pagination: PaginationDTO[CountryDTO], q: Optional[str]) -> PaginationDTO[CountryDTO]: ...
+
+    @abstractmethod
+    async def get_country_by_id(self, country_id: int) -> Optional[CountryDTO]: ...
+
+    @abstractmethod
+    async def get_city_by_name_and_country_id(
+            self,
+            pagination: PaginationDTO[CityDTO],
+            q: Optional[str],
+            country_id: Optional[int],
+    ): ...

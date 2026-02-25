@@ -17,7 +17,7 @@ class CountryRepository(ICountryRepository):
         self._session = session
 
     def _base_query(self):
-        return select(Country)
+        return select(Country).order_by(Country.name.asc())
 
     async def _fetch_one(self, query) -> Optional[CountryDTO]:
         result = await self._session.execute(query)
@@ -77,7 +77,7 @@ class CityRepository(ICityRepository):
         self._session = session
 
     def _base_query(self, populate_country: bool = False):
-        query = select(City)
+        query = select(City).order_by(City.name.asc())
 
         if populate_country:
             query = query.options(

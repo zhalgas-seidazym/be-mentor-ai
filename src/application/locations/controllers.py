@@ -14,6 +14,10 @@ class LocationController(ILocationController):
         self._country_repository = country_repository
         self._city_repository = city_repository
 
-    async def get_countries_by_name(self, pagination: PaginationDTO[CountryDTO], q: Optional[str]) -> Dict:
+    async def get_countries_by_name(self, pagination: PaginationDTO[CountryDTO], q: Optional[str]) -> PaginationDTO[CountryDTO]:
         res = await self._country_repository.get(name=q, pagination=pagination)
+        return res
+
+    async def get_country_by_id(self, country_id: int) -> Optional[CountryDTO]:
+        res = await self._country_repository.get_by_id(country_id)
         return res
