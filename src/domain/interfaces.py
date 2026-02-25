@@ -1,4 +1,7 @@
-from typing import Protocol, Optional
+from typing import Protocol, Optional, List
+
+from src.application.directions.dtos import SalaryDTO
+from src.domain.value_objects import ChatGPTModel
 
 
 class IUoW(Protocol):
@@ -26,3 +29,15 @@ class IEmailService(Protocol):
         body: str,
         html: bool = False
     ) -> None: ...
+
+class IOpenAIService(Protocol):
+
+    async def get_specializations(
+        self,
+        skills: List[str],
+        country: str,
+        city: str,
+        model: ChatGPTModel,
+        temperature: float = 0.4,
+    ) -> List[SalaryDTO]:
+        ...

@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # ---- OTP ----
     OTP_TTL: int
 
+    # ---- OpenAI ----
+    OPENAI_API_KEY: str
+
 
     @property
     def db_url(self) -> str:

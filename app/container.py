@@ -8,6 +8,7 @@ from src.infrastructure.dbs.redis import RedisConnection
 from src.infrastructure.integrations.email_service import EmailService
 from src.infrastructure.integrations.es_client import ElasticsearchClient
 from src.infrastructure.integrations.jwt_service import JWTService
+from src.infrastructure.integrations.openai_service import OpenAIService
 
 
 class Container(containers.DeclarativeContainer):
@@ -64,4 +65,9 @@ class Container(containers.DeclarativeContainer):
     skill_search_service = providers.Factory(
         SkillSearchService,
         es_client=elasticsearch_client.provided.client,
+    )
+
+    openai_service = providers.Factory(
+        OpenAIService,
+        OPENAI_API_KEY=settings.OPENAI_API_KEY,
     )

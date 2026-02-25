@@ -84,3 +84,7 @@ class ISalaryRepository(ABC):
         self,
         salary_id: int,
     ) -> bool: ...
+
+class IDirectionSalaryController(ABC):
+    ...
+
