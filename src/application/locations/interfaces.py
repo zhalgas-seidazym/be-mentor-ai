@@ -71,4 +71,5 @@ class ILocationController(ABC):
             pagination: PaginationDTO[CityDTO],
             q: Optional[str],
             country_id: Optional[int],
-    ): ...
+            populate_country: bool = False,
+    ) -> PaginationDTO[CityDTO]: ...

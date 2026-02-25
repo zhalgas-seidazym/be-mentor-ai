@@ -1,6 +1,6 @@
 from typing import Optional, Dict
 
-from src.application.locations.dtos import CountryDTO
+from src.application.locations.dtos import CountryDTO, CityDTO
 from src.application.locations.interfaces import ILocationController, ICountryRepository, ICityRepository
 from src.domain.base_dto import PaginationDTO
 
@@ -20,4 +20,14 @@ class LocationController(ILocationController):
 
     async def get_country_by_id(self, country_id: int) -> Optional[CountryDTO]:
         res = await self._country_repository.get_by_id(country_id)
+        return res
+
+    async def get_city_by_name_and_country_id(
+            self,
+            pagination: PaginationDTO[CityDTO],
+            q: Optional[str],
+            country_id: Optional[int],
+            populate_country: bool = False,
+    ) -> PaginationDTO[CityDTO]:
+        res = await self._city_repository.get(name=q, pagination=pagination, populate_country=populate_country)
         return res
