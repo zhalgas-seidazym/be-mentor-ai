@@ -18,11 +18,8 @@ router = APIRouter(
 
 @router.post(
     '',
-    response_model={
-        'detail': 'Skill created successfully',
-        'skill': SkillDTO,
-    },
     status_code=s.HTTP_201_CREATED,
+    response_model=SkillDTO,
     responses={
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
         s.HTTP_409_CONFLICT: RESPONSE_409

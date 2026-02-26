@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, List
 
 from src.application.directions.dtos import DirectionDTO, SalaryDTO
 from src.domain.base_dto import PaginationDTO
@@ -86,5 +86,11 @@ class ISalaryRepository(ABC):
     ) -> bool: ...
 
 class IDirectionSalaryController(ABC):
-    ...
+
+    @abstractmethod
+    async def get_ai_directions(
+            self,
+            skills: List[str],
+            city_id: int,
+    ) -> List[SalaryDTO]: ...
 

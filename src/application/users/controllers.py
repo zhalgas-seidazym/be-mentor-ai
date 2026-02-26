@@ -107,7 +107,8 @@ class UserController(IUserController):
     async def reset_password(self, user_data: UserDTO) -> Dict:
         user_data.password = self._hash_service.hash_password(user_data.password)
 
-        await self._user_repository.update(user_id=user_data.id, dto=user_data)
+        async with self._uow:
+            await self._user_repository.update(user_id=user_data.id, dto=user_data)
 
         return {
             "detail": "Password updated successfully",

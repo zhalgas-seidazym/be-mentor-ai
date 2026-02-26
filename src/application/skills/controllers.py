@@ -5,15 +5,18 @@ from fastapi import HTTPException, status as s
 from src.application.skills.dtos import SkillDTO
 from src.application.skills.interfaces import ISkillController, ISkillSearchService, ISkillRepository
 from src.domain.base_dto import PaginationDTO
+from src.domain.interfaces import IUoW
 
 
 class SkillController(ISkillController):
     def __init__(
             self,
             skill_repository: ISkillRepository,
+            uow: IUoW,
             skill_search_service: ISkillSearchService,
     ):
         self._skill_repository = skill_repository
+        self._uow = uow
         self._skill_search_service = skill_search_service
 
     async def skill_autocomplete(self, pagination: PaginationDTO[SkillDTO], q: Optional[str] = None) -> PaginationDTO[SkillDTO]:
@@ -39,16 +42,15 @@ class SkillController(ISkillController):
 
         return res
 
-    async def create(self, name: str) -> Dict:
+    async def create(self, name: str) -> SkillDTO:
         skill = await self._skill_repository.get_by_name(name)
 
         if skill:
             raise HTTPException(status_code=s.HTTP_409_CONFLICT, detail=f"Skill {name} already exists")
 
-        skill = await self._skill_repository.add(name)
+        async with self._uow:
+            skill = await self._skill_repository.add(name)
+
         await self._skill_search_service.index(skill_id=skill.id, name=name)
 
-        return {
-            "detail": f"Skill {name} created successfully",
-            "skill": skill,
-        }
+        return skill
