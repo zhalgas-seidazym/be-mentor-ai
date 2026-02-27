@@ -2,6 +2,7 @@ from dependency_injector import containers, providers
 
 from app.settings import Settings
 from src.application.skills.services import SkillSearchService
+from src.application.directions.services import DirectionSearchService
 from src.application.users.services import EmailOtpService, HashService
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
@@ -64,6 +65,11 @@ class Container(containers.DeclarativeContainer):
 
     skill_search_service = providers.Factory(
         SkillSearchService,
+        es_client=elasticsearch_client.provided.client,
+    )
+
+    direction_search_service = providers.Factory(
+        DirectionSearchService,
         es_client=elasticsearch_client.provided.client,
     )
 

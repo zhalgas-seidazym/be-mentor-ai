@@ -94,3 +94,37 @@ class IDirectionSalaryController(ABC):
             city_id: int,
     ) -> List[SalaryDTO]: ...
 
+    @abstractmethod
+    async def direction_autocomplete(
+            self,
+            pagination: PaginationDTO[DirectionDTO],
+            q: Optional[str] = None,
+    ) -> PaginationDTO[DirectionDTO]: ...
+
+class IDirectionSearchService(ABC):
+
+    @abstractmethod
+    async def create_index_if_not_exists(self) -> None: ...
+
+    @abstractmethod
+    async def delete_index(self) -> bool: ...
+
+    @abstractmethod
+    async def count(self) -> int: ...
+
+    @abstractmethod
+    async def bulk_index(self, directions: List[DirectionDTO]) -> None: ...
+
+    @abstractmethod
+    async def index(self, direction_id: int, name: str) -> None: ...
+
+    @abstractmethod
+    async def delete(self, direction_id: int) -> None: ...
+
+    @abstractmethod
+    async def search(
+        self,
+        name: Optional[str] = None,
+        pagination: Optional[PaginationDTO[DirectionDTO]] = None,
+    ) -> PaginationDTO[DirectionDTO]: ...
+

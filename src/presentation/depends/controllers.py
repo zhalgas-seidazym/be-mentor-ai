@@ -3,7 +3,7 @@ from fastapi import Depends
 
 from app.container import Container
 from src.application.directions.controllers import DirectionSalaryController
-from src.application.directions.interfaces import IDirectionSalaryController
+from src.application.directions.interfaces import IDirectionSalaryController, IDirectionSearchService
 from src.application.locations.controllers import LocationController
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
@@ -59,11 +59,13 @@ async def get_direction_salary_controller(
         city_repository: ICityRepository = Depends(get_city_repository),
         uow: IUoW = Depends(get_uow),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
+        direction_search_service: IDirectionSearchService = Depends(Provide[Container.direction_search_service]),
 ) -> IDirectionSalaryController:
     return DirectionSalaryController(
         salary_repository=salary_repository,
         direction_repository=direction_repository,
         city_repository=city_repository,
         uow=uow,
-        openai_service=openai_service
+        openai_service=openai_service,
+        direction_search_service=direction_search_service,
     )

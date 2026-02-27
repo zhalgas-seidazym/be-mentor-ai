@@ -4,6 +4,7 @@ from dependency_injector.wiring import inject, Provide
 from fastapi import FastAPI, Depends
 
 from src.application.skills.interfaces import ISkillSearchService
+from src.application.directions.interfaces import IDirectionSearchService
 from .container import Container
 from src.presentation.routers import (
     users_router as ur,
@@ -23,8 +24,11 @@ app.container = container
 async def startup():
     skill_search: ISkillSearchService = Container.skill_search_service()
     # await skill_search.delete_index()
-    check = await skill_search.create_index_if_not_exists()
-    print(check)
+    await skill_search.create_index_if_not_exists()
+
+    direction_search: IDirectionSearchService = Container.direction_search_service()
+    # await direction_search.delete_index()
+    await direction_search.create_index_if_not_exists()
 
 app.include_router(ur.router)
 app.include_router(sr.router)
