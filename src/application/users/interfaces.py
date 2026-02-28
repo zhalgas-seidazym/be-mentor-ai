@@ -46,6 +46,7 @@ class IUserSkillRepository(ABC):
         user_id: int,
         pagination: Optional[PaginationDTO[UserSkillDTO]] = None,
         populate_skill: bool = False,
+        to_learn: Optional[bool] = None,
     ) -> PaginationDTO[UserSkillDTO]: ...
 
     @abstractmethod

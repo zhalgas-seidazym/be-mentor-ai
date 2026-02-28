@@ -162,23 +162,28 @@ class UserSkillRepository(IUserSkillRepository):
         user_id: int,
         pagination: Optional[PaginationDTO[UserSkillDTO]] = None,
         populate_skill: bool = False,
+        to_learn: Optional[bool] = None,
     ) -> PaginationDTO[UserSkillDTO]:
 
-        pagination = pagination or PaginationDTO[UserSkillDTO]()
+        base_query = self._base_query(populate_skill).where(UserSkill.user_id == user_id)
 
-        page = max(pagination.page or 1, 1)
-        per_page = max(pagination.per_page or 10, 1)
-        offset = (page - 1) * per_page
-
-        base_query = self._base_query(populate_skill).where(
-            UserSkill.user_id == user_id
-        )
+        if to_learn is not None:
+            base_query = base_query.where(UserSkill.to_learn == to_learn)
 
         count_query = select(func.count()).select_from(base_query.subquery())
         count_result = await self._session.execute(count_query)
         total = count_result.scalar_one()
 
-        query = base_query.offset(offset).limit(per_page)
+        if pagination is None:
+            query = base_query
+            page = 1
+            per_page = total
+        else:
+            page = max(pagination.page or 1, 1)
+            per_page = max(pagination.per_page or 10, 1)
+            offset = (page - 1) * per_page
+            query = base_query.offset(offset).limit(per_page)
+
         result = await self._session.execute(query)
         rows = result.scalars().all()
 
