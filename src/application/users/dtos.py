@@ -13,6 +13,7 @@ class UserSkillDTO:
     skill_id: Optional[int] = None
     skill: Optional[SkillDTO] = None
     to_learn: Optional[bool] = None
+    match_percentage: Optional[float] = None
 
 @dataclass
 class UserDTO:

@@ -117,6 +117,7 @@ def user_skill_orm_to_dto(
         skill_id=row.skill_id,
         skill=skill_dto,
         to_learn=row.to_learn,
+        match_percentage=row.match_percentage,
     )
 
 def user_skill_dto_to_orm(
@@ -134,5 +135,8 @@ def user_skill_dto_to_orm(
 
     if dto.to_learn is not None:
         row.to_learn = dto.to_learn
+
+    if dto.match_percentage is not None:
+        row.match_percentage = dto.match_percentage
 
     return row

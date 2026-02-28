@@ -5,6 +5,8 @@ from typing import List
 from openai import AsyncOpenAI, OpenAIError
 
 from src.application.directions.dtos import SalaryDTO, DirectionDTO
+from src.application.skills.dtos import SkillDTO
+from src.application.users.dtos import UserSkillDTO
 from src.domain.value_objects import ChatGPTModel
 
 
@@ -187,4 +189,101 @@ class OpenAIService:
         except Exception:
             logger.exception("Unexpected AI parsing error")
             return ""
+
+    async def get_direction_theoretical_skills(
+            self,
+            direction_name: str,
+            skills: List[str],
+            model: ChatGPTModel,
+            temperature: float = 0.3,
+    ) -> List[UserSkillDTO]:
+
+        if not 0 <= temperature <= 2:
+            raise ValueError("temperature must be between 0 and 2")
+
+        prompt = f"""
+        You are a senior technical interviewer.
+
+        Given a career direction and a few known skills, propose technical skills
+        that are good candidates for theoretical interview questions.
+
+        Direction: {direction_name}
+        Known skills: {skills}
+
+        REQUIREMENTS:
+        1. Skills must be technical and broadly relevant to the direction.
+        2. Do NOT repeat skills already provided in Known skills.
+        3. Use short skill names (1-3 words each).
+        4. For each skill, estimate a match percentage (0-100) for how
+           relevant it is to the direction and interview questions.
+        5. Return ONLY valid JSON in the format below.
+
+        {{
+          "skills": [
+            {{
+              "name": "string",
+              "match_percentage": 0
+            }}
+          ]
+        }}
+        """
+
+        try:
+            response = await self._client.responses.create(
+                model=model.value,
+                temperature=temperature,
+                input=prompt,
+            )
+
+            content = response.output_text
+
+            if not content:
+                logger.error("Empty response from AI")
+                return []
+
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+
+            if not json_match:
+                logger.error(f"No JSON found in response: {content}")
+                return []
+
+            clean_json = json_match.group()
+            parsed = json.loads(clean_json)
+
+            skills_list = parsed.get("skills", [])
+            if not isinstance(skills_list, list):
+                return []
+
+            result: List[UserSkillDTO] = []
+            for item in skills_list:
+                if not isinstance(item, dict):
+                    continue
+
+                name = item.get("name", "")
+                if not isinstance(name, str):
+                    continue
+
+                name = name.strip()
+                if not name:
+                    continue
+
+                match_percentage = item.get("match_percentage")
+                try:
+                    match_percentage_value = float(match_percentage)
+                except (TypeError, ValueError):
+                    match_percentage_value = None
+
+                result.append(
+                    UserSkillDTO(
+                        skill=SkillDTO(name=name),
+                        to_learn=True,
+                        match_percentage=match_percentage_value,
+                    )
+                )
+
+            return result
+
+        except Exception:
+            logger.exception("Unexpected AI parsing error")
+            return []
 

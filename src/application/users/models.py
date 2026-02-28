@@ -89,6 +89,10 @@ class UserSkill(Base):
         default=False,
     )
 
+    match_percentage: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+    )
+
     # --- Relations ---
     user: Mapped["User"] = relationship(
         "User",
