@@ -1,9 +1,11 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from fastapi import HTTPException, status as s
 
 from src.application.skills.dtos import SkillDTO
 from src.application.skills.interfaces import ISkillController, ISkillSearchService, ISkillRepository
+from src.application.users.interfaces import IUserSkillRepository
+from src.application.users.dtos import UserSkillDTO
 from src.domain.base_dto import PaginationDTO
 from src.domain.interfaces import IUoW
 
@@ -12,10 +14,12 @@ class SkillController(ISkillController):
     def __init__(
             self,
             skill_repository: ISkillRepository,
+            user_skill_repository: IUserSkillRepository,
             uow: IUoW,
             skill_search_service: ISkillSearchService,
     ):
         self._skill_repository = skill_repository
+        self._user_skill_repository = user_skill_repository
         self._uow = uow
         self._skill_search_service = skill_search_service
 
@@ -54,3 +58,15 @@ class SkillController(ISkillController):
         await self._skill_search_service.index(skill_id=skill.id, name=name)
 
         return skill
+
+    async def get_my_skills(
+        self,
+        user_id: int,
+        populate_skill: bool = False,
+    ) -> List[UserSkillDTO]:
+        res = await self._user_skill_repository.get_by_user_id(
+            user_id=user_id,
+            populate_skill=populate_skill,
+            to_learn=False,
+        )
+        return res.items

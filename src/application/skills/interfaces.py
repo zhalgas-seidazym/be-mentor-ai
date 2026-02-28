@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
 
 from src.application.skills.dtos import SkillDTO
+from src.application.users.dtos import UserSkillDTO
 from src.domain.base_dto import PaginationDTO
 
 
@@ -40,6 +41,13 @@ class ISkillController(ABC):
 
     @abstractmethod
     async def create(self, name: str) -> SkillDTO: ...
+
+    @abstractmethod
+    async def get_my_skills(
+        self,
+        user_id: int,
+        populate_skill: bool = False,
+    ) -> List[UserSkillDTO]: ...
 
 class ISkillSearchService(ABC):
 

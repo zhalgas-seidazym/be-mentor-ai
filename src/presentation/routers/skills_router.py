@@ -1,8 +1,9 @@
-from typing import Optional, Annotated
+from typing import Optional, Annotated, List
 
 from fastapi import APIRouter, status as s, Query, Depends, Body
 
 from src.application.skills.dtos import SkillDTO
+from src.application.users.dtos import UserDTO, UserSkillDTO
 from src.application.skills.interfaces import ISkillController
 from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
@@ -12,7 +13,7 @@ from src.presentation.depends.controllers import get_skill_controller
 from src.presentation.depends.security import get_access_user
 
 router = APIRouter(
-    prefix="/skill",
+    prefix="/skills",
     tags=["skill"]
 )
 
@@ -46,6 +47,25 @@ async def skill_autocomplete(
         pagination: PaginationSchema = Depends(PaginationSchema.as_query())
 ):
     return await controller.skill_autocomplete(PaginationDTO[SkillDTO](**pagination.dict()), q=q)
+
+@router.get(
+    '/my',
+    status_code=s.HTTP_200_OK,
+    response_model=List[UserSkillDTO],
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+    }
+)
+async def get_my_skills(
+        controller: Annotated[ISkillController, Depends(get_skill_controller)],
+        user: UserDTO = Depends(get_access_user),
+        populate_skill: bool = Query(False),
+):
+    return await controller.get_my_skills(
+        user_id=user.id,
+        populate_skill=populate_skill,
+    )
 
 @router.get(
     '/{skill_id}',

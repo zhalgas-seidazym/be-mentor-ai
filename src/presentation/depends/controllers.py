@@ -54,11 +54,13 @@ async def get_user_controller(
 @inject
 async def get_skill_controller(
         skill_repository: ISkillRepository = Depends(get_skill_repository),
+        user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
         skill_search_service: ISkillSearchService = Depends(Provide[Container.skill_search_service]),
         uow: IUoW = Depends(get_uow),
 ) -> ISkillController:
     return SkillController(
         skill_repository=skill_repository,
+        user_skill_repository=user_skill_repository,
         skill_search_service=skill_search_service,
         uow=uow
     )
