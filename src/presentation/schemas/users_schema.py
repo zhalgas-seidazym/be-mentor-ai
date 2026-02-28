@@ -8,3 +8,9 @@ from src.domain.base_schema import PasswordSchema
 class UserRegisterSchema(PasswordSchema):
     email: EmailStr
     code: str
+
+class UserProfileCreateSchema(BaseModel):
+    name: str
+    city_id: int
+    direction_id: int
+    skill_ids: list[int]

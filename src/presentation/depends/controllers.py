@@ -3,13 +3,23 @@ from fastapi import Depends
 
 from app.container import Container
 from src.application.directions.controllers import DirectionSalaryController
-from src.application.directions.interfaces import IDirectionSalaryController, IDirectionSearchService
+from src.application.directions.interfaces import (
+    IDirectionSalaryController,
+    IDirectionSearchService,
+    IDirectionRepository,
+)
 from src.application.locations.controllers import LocationController
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
 from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService
 from src.application.users.controllers import UserController
-from src.application.users.interfaces import IUserRepository, IEmailOtpService, IUserController, IHashService
+from src.application.users.interfaces import (
+    IUserRepository,
+    IEmailOtpService,
+    IUserController,
+    IHashService,
+    IUserSkillRepository,
+)
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
 from src.presentation.depends.session import get_uow
@@ -18,6 +28,10 @@ from src.presentation.depends.session import get_uow
 @inject
 async def get_user_controller(
         user_repository: IUserRepository = Depends(get_user_repository),
+        user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        skill_repository: ISkillRepository = Depends(get_skill_repository),
+        direction_repository: IDirectionRepository = Depends(get_direction_repository),
+        city_repository: ICityRepository = Depends(get_city_repository),
         email_otp_service: IEmailOtpService = Depends(Provide[Container.email_otp_service]),
         jwt_service: IJWTService = Depends(Provide[Container.jwt_service]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
@@ -25,6 +39,10 @@ async def get_user_controller(
 ) -> IUserController:
     return UserController(
         user_repository=user_repository,
+        user_skill_repository=user_skill_repository,
+        skill_repository=skill_repository,
+        direction_repository=direction_repository,
+        city_repository=city_repository,
         email_otp_service=email_otp_service,
         jwt_service=jwt_service,
         hash_service=hash_service,

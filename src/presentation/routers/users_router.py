@@ -8,8 +8,8 @@ from src.application.users.interfaces import IUserController
 from src.domain.base_schema import PasswordSchema
 from src.domain.responses import *
 from src.presentation.depends.controllers import get_user_controller
-from src.presentation.depends.security import get_reset_user, get_refresh_user
-from src.presentation.schemas.users_schema import UserRegisterSchema
+from src.presentation.depends.security import get_reset_user, get_refresh_user, get_access_user
+from src.presentation.schemas.users_schema import UserRegisterSchema, UserProfileCreateSchema
 
 router = APIRouter(
     prefix="/user",
@@ -207,3 +207,26 @@ async def refresh_token(
         user: UserDTO = Depends(get_refresh_user)
 ):
     return await controller.refresh_token(user)
+
+@router.post(
+    '/profile',
+    status_code=s.HTTP_201_CREATED,
+    response_model=UserDTO,
+    response_model_exclude={"password"},
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    }
+)
+async def create_profile(
+        body: UserProfileCreateSchema,
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        user: UserDTO = Depends(get_access_user),
+):
+    return await controller.create_profile(
+        user_id=user.id,
+        name=body.name,
+        city_id=body.city_id,
+        direction_id=body.direction_id,
+        skill_ids=body.skill_ids,
+    )

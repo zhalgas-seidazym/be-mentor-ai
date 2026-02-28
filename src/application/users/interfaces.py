@@ -85,6 +85,16 @@ class IUserController(ABC):
     @abstractmethod
     async def refresh_token(self, user_data: UserDTO) -> Dict: ...
 
+    @abstractmethod
+    async def create_profile(
+        self,
+        user_id: int,
+        name: str,
+        city_id: int,
+        direction_id: int,
+        skill_ids: list[int],
+    ) -> UserDTO: ...
+
 class IEmailOtpService(Protocol):
     async def send_otp(self, email: str, ttl: Optional[int] = None) -> None: ...
 

@@ -3,7 +3,17 @@ from typing import Dict
 from fastapi import HTTPException, status as s
 
 from src.application.users.dtos import UserDTO
-from src.application.users.interfaces import IUserController, IUserRepository, IEmailOtpService, IHashService
+from src.application.directions.interfaces import IDirectionRepository
+from src.application.locations.interfaces import ICityRepository
+from src.application.skills.interfaces import ISkillRepository
+from src.application.users.dtos import UserSkillDTO
+from src.application.users.interfaces import (
+    IUserController,
+    IUserRepository,
+    IEmailOtpService,
+    IHashService,
+    IUserSkillRepository,
+)
 from src.domain.interfaces import IUoW, IJWTService
 from src.domain.value_objects import TokenType
 
@@ -13,12 +23,20 @@ class UserController(IUserController):
             self,
             uow: IUoW,
             user_repository: IUserRepository,
+            user_skill_repository: IUserSkillRepository,
+            skill_repository: ISkillRepository,
+            direction_repository: IDirectionRepository,
+            city_repository: ICityRepository,
             email_otp_service: IEmailOtpService,
             hash_service: IHashService,
             jwt_service: IJWTService,
     ):
         self._uow = uow
         self._user_repository = user_repository
+        self._user_skill_repository = user_skill_repository
+        self._skill_repository = skill_repository
+        self._direction_repository = direction_repository
+        self._city_repository = city_repository
         self._email_otp_service = email_otp_service
         self._hash_service = hash_service
         self._jwt_service = jwt_service
@@ -130,3 +148,48 @@ class UserController(IUserController):
             "access_token": access_token,
             "refresh_token": refresh_token,
         }
+
+    async def create_profile(
+        self,
+        user_id: int,
+        name: str,
+        city_id: int,
+        direction_id: int,
+        skill_ids: list[int],
+    ) -> UserDTO:
+        user = await self._user_repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
+
+        city = await self._city_repository.get_by_id(city_id)
+        if not city:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"City {city_id} not found")
+
+        direction = await self._direction_repository.get_by_id(direction_id)
+        if not direction:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Direction {direction_id} not found")
+
+        unique_skill_ids = list(dict.fromkeys(skill_ids))
+        for skill_id in unique_skill_ids:
+            skill = await self._skill_repository.get_by_id(skill_id)
+            if not skill:
+                raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Skill {skill_id} not found")
+
+        async with self._uow:
+            user_update = UserDTO(
+                name=name,
+                city_id=city_id,
+                direction_id=direction_id,
+                is_onboarding_completed=True,
+            )
+            user = await self._user_repository.update(user_id=user_id, dto=user_update)
+
+            for skill_id in unique_skill_ids:
+                await self._user_skill_repository.add(
+                    UserSkillDTO(
+                        user_id=user_id,
+                        skill_id=skill_id,
+                    )
+                )
+
+        return user
