@@ -193,3 +193,22 @@ class UserController(IUserController):
                 )
 
         return user
+
+    async def get_profile(
+        self,
+        user_id: int,
+        populate_city: bool = False,
+        populate_direction: bool = False,
+        populate_skills: bool = False,
+    ) -> UserDTO:
+        user = await self._user_repository.get_by_id(
+            user_id=user_id,
+            populate_city=populate_city,
+            populate_skills=populate_skills,
+            populate_direction=populate_direction,
+        )
+
+        if not user:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
+
+        return user

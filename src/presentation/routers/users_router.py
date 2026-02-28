@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status as s, Depends, Body
+from fastapi import APIRouter, status as s, Depends, Body, Query
 from pydantic import EmailStr
 
 from src.application.users.dtos import UserDTO
@@ -229,4 +229,28 @@ async def create_profile(
         city_id=body.city_id,
         direction_id=body.direction_id,
         skill_ids=body.skill_ids,
+    )
+
+@router.get(
+    '/profile',
+    status_code=s.HTTP_200_OK,
+    response_model=UserDTO,
+    response_model_exclude={"password"},
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    }
+)
+async def get_profile(
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        user: UserDTO = Depends(get_access_user),
+        populate_city: bool = Query(False),
+        populate_direction: bool = Query(False),
+        populate_skills: bool = Query(False),
+):
+    return await controller.get_profile(
+        user_id=user.id,
+        populate_city=populate_city,
+        populate_direction=populate_direction,
+        populate_skills=populate_skills,
     )

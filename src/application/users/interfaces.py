@@ -96,6 +96,15 @@ class IUserController(ABC):
         skill_ids: list[int],
     ) -> UserDTO: ...
 
+    @abstractmethod
+    async def get_profile(
+        self,
+        user_id: int,
+        populate_city: bool = False,
+        populate_direction: bool = False,
+        populate_skills: bool = False,
+    ) -> UserDTO: ...
+
 class IEmailOtpService(Protocol):
     async def send_otp(self, email: str, ttl: Optional[int] = None) -> None: ...
 
