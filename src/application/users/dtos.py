@@ -24,6 +24,7 @@ class UserDTO:
     direction_id: Optional[int] = None
     is_onboarding_completed: Optional[bool] = None
     skills: Optional[List[UserSkillDTO]] = None
+    modules: Optional[List[UserSkillDTO]] = None
     direction: Optional[DirectionDTO] = None
     city: Optional[CityDTO] = None
     created_at: Optional[datetime] = None
