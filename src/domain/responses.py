@@ -51,6 +51,17 @@ RESPONSE_405 = {
     }
 }
 
+RESPONSE_408 = {
+    "description": "Request Timeout",
+    "content": {
+        "application/json": {
+            "example": {
+                "detail": "Request timed out"
+            }
+        }
+    }
+}
+
 RESPONSE_409 = {
     "description": "Conflict",
     "content": {

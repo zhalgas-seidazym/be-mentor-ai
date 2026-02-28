@@ -128,3 +128,63 @@ class OpenAIService:
             logger.exception("Unexpected AI parsing error")
             return []
 
+    async def get_direction_description(
+            self,
+            direction_name: str,
+            model: ChatGPTModel,
+            temperature: float = 0.2,
+    ) -> str:
+
+        if not 0 <= temperature <= 2:
+            raise ValueError("temperature must be between 0 and 2")
+
+        prompt = f"""
+        You are a professional career advisor.
+
+        Provide a concise, neutral description for the given career direction.
+
+        Direction: {direction_name}
+
+        REQUIREMENTS:
+        1. Output 10-25 words.
+        2. Do not mention seniority levels.
+        3. Do not include salary, location, or company-specific details.
+        4. Return ONLY valid JSON in the format below.
+
+        {{
+          "description": "string"
+        }}
+        """
+
+        try:
+            response = await self._client.responses.create(
+                model=model.value,
+                temperature=temperature,
+                input=prompt,
+            )
+
+            content = response.output_text
+
+            if not content:
+                logger.error("Empty response from AI")
+                return ""
+
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+
+            if not json_match:
+                logger.error(f"No JSON found in response: {content}")
+                return ""
+
+            clean_json = json_match.group()
+            parsed = json.loads(clean_json)
+
+            description = parsed.get("description", "")
+            if not isinstance(description, str):
+                return ""
+
+            return description.strip()
+
+        except Exception:
+            logger.exception("Unexpected AI parsing error")
+            return ""
+

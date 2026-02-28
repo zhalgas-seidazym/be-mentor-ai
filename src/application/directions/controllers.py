@@ -103,3 +103,44 @@ class DirectionSalaryController(IDirectionSalaryController):
 
         res = await self._direction_search_service.search(pagination=pagination, name=q)
         return res
+
+    async def create_direction(
+            self,
+            name: str,
+    ) -> DirectionDTO:
+        existing = await self._direction_repository.get_by_name(name)
+
+        if existing:
+            raise HTTPException(
+                status_code=s.HTTP_409_CONFLICT,
+                detail=f"Direction {name} already exists"
+            )
+
+        description = ""
+        for _ in range(3):
+            description = await self._openai_service.get_direction_description(
+                direction_name=name,
+                model=ChatGPTModel.GPT_4_1,
+            )
+            if description:
+                break
+        if not description:
+            raise HTTPException(
+                status_code=s.HTTP_408_REQUEST_TIMEOUT,
+                detail="Failed to generate description, please try again"
+            )
+
+        direction = DirectionDTO(
+            name=name,
+            description=description,
+        )
+
+        async with self._uow:
+            direction = await self._direction_repository.add(direction)
+
+        await self._direction_search_service.index(
+            direction_id=direction.id,
+            name=direction.name,
+        )
+
+        return direction

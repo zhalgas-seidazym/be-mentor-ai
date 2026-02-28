@@ -101,6 +101,12 @@ class IDirectionSalaryController(ABC):
             q: Optional[str] = None,
     ) -> PaginationDTO[DirectionDTO]: ...
 
+    @abstractmethod
+    async def create_direction(
+            self,
+            name: str,
+    ) -> DirectionDTO: ...
+
 class IDirectionSearchService(ABC):
 
     @abstractmethod

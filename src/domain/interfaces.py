@@ -41,3 +41,11 @@ class IOpenAIService(Protocol):
         temperature: float = 0.4,
     ) -> List[SalaryDTO]:
         ...
+
+    async def get_direction_description(
+        self,
+        direction_name: str,
+        model: ChatGPTModel,
+        temperature: float = 0.2,
+    ) -> str:
+        ...

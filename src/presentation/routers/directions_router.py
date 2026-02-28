@@ -4,15 +4,35 @@ from fastapi import APIRouter, status as s, Depends, Body, Query
 
 from src.application.directions.dtos import SalaryDTO, DirectionDTO
 from src.application.directions.interfaces import IDirectionSalaryController
+from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
 from src.domain.base_schema import PaginationSchema
 from src.domain.responses import *
 from src.presentation.depends.controllers import get_direction_salary_controller
+from src.presentation.depends.security import get_access_user
 
 router = APIRouter(
     prefix="/directions",
     tags=["directions"]
 )
+
+@router.post(
+    '',
+    status_code=s.HTTP_201_CREATED,
+    response_model=DirectionDTO,
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_408_REQUEST_TIMEOUT: RESPONSE_408,
+        s.HTTP_409_CONFLICT: RESPONSE_409,
+    }
+)
+async def create_direction(
+        controller: Annotated[IDirectionSalaryController, Depends(get_direction_salary_controller)],
+        name: str = Body(),
+        user: UserDTO = Depends(get_access_user)
+):
+    return await controller.create_direction(name)
 
 @router.post(
     '/ai-directions',
