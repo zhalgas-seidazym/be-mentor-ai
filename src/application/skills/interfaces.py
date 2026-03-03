@@ -46,8 +46,9 @@ class ISkillController(ABC):
     async def get_my_skills(
         self,
         user_id: int,
+        pagination: Optional[PaginationDTO[UserSkillDTO]] = None,
         populate_skill: bool = False,
-    ) -> List[UserSkillDTO]: ...
+    ) -> PaginationDTO[UserSkillDTO]: ...
 
 class ISkillSearchService(ABC):
 

@@ -174,7 +174,7 @@ class UserSkillRepository(IUserSkillRepository):
         count_result = await self._session.execute(count_query)
         total = count_result.scalar_one()
 
-        if pagination is None:
+        if pagination is None or pagination.per_page is None:
             query = base_query
             page = 1
             per_page = total

@@ -62,11 +62,12 @@ class SkillController(ISkillController):
     async def get_my_skills(
         self,
         user_id: int,
+        pagination: Optional[PaginationDTO[UserSkillDTO]] = None,
         populate_skill: bool = False,
-    ) -> List[UserSkillDTO]:
-        res = await self._user_skill_repository.get_by_user_id(
+    ) -> PaginationDTO[UserSkillDTO]:
+        return await self._user_skill_repository.get_by_user_id(
             user_id=user_id,
+            pagination=pagination,
             populate_skill=populate_skill,
             to_learn=False,
         )
-        return res.items

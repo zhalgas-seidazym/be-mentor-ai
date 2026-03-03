@@ -1,4 +1,4 @@
-from typing import Optional, Annotated, List
+﻿from typing import Optional, Annotated, List
 
 from fastapi import APIRouter, status as s, Query, Depends, Body
 
@@ -51,7 +51,7 @@ async def skill_autocomplete(
 @router.get(
     '/my',
     status_code=s.HTTP_200_OK,
-    response_model=List[UserSkillDTO],
+    response_model=PaginationDTO[UserSkillDTO],
     response_model_exclude_none=True,
     responses={
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
@@ -61,9 +61,11 @@ async def get_my_skills(
         controller: Annotated[ISkillController, Depends(get_skill_controller)],
         user: UserDTO = Depends(get_access_user),
         populate_skill: bool = Query(False),
+        pagination: PaginationSchema = Depends(PaginationSchema.as_query()),
 ):
     return await controller.get_my_skills(
         user_id=user.id,
+        pagination=PaginationDTO[UserSkillDTO](**pagination.dict()),
         populate_skill=populate_skill,
     )
 

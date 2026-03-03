@@ -11,6 +11,7 @@ from src.presentation.routers import (
     skills_router as sr,
     locations_router as lr,
     directions_router as dr,
+    modules_router as mr,
 )
 
 
@@ -34,3 +35,4 @@ app.include_router(ur.router)
 app.include_router(sr.router)
 app.include_router(lr.router)
 app.include_router(dr.router)
+app.include_router(mr.router)

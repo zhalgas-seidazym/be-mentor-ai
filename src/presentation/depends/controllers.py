@@ -9,6 +9,8 @@ from src.application.directions.interfaces import (
     IDirectionRepository,
 )
 from src.application.locations.controllers import LocationController
+from src.application.modules.controllers import ModuleController
+from src.application.modules.interfaces import IModuleController
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
 from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService
@@ -63,6 +65,13 @@ async def get_skill_controller(
         user_skill_repository=user_skill_repository,
         skill_search_service=skill_search_service,
         uow=uow
+    )
+
+async def get_module_controller(
+        user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+) -> IModuleController:
+    return ModuleController(
+        user_skill_repository=user_skill_repository,
     )
 
 async def get_location_controller(
