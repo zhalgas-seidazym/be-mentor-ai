@@ -64,6 +64,12 @@ class User(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
+    user_questions: Mapped[list["UserQuestion"]] = relationship(
+        "UserQuestion",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
     direction: Mapped[Optional["Direction"]] = relationship(
         "Direction",
         back_populates="users",

@@ -11,3 +11,8 @@ class ChatGPTModel(str, Enum):
     GPT_4O_MINI = "gpt-4o-mini"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4_1 = "gpt-4.1"
+
+
+class QuestionStatus(str, Enum):
+    SATISFACTORY = "satisfactory"
+    UNSATISFACTORY = "unsatisfactory"

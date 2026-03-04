@@ -29,6 +29,12 @@ class Skill(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
+    questions: Mapped[list["Question"]] = relationship(
+        "Question",
+        back_populates="skill",
+        cascade="all, delete-orphan",
+    )
+
 
 class UserSkill(Base):
     __tablename__ = "user_skills"
