@@ -81,6 +81,11 @@ class UserQuestion(Base, TimestampMixin):
         nullable=False,
     )
 
+    interview_question_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("interview_questions.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     # --- Relations ---
     user: Mapped[Optional["User"]] = relationship(
         "User",
@@ -89,5 +94,10 @@ class UserQuestion(Base, TimestampMixin):
 
     question: Mapped[Optional["Question"]] = relationship(
         "Question",
+        back_populates="user_questions",
+    )
+
+    interview_question: Mapped[Optional["InterviewQuestion"]] = relationship(
+        "InterviewQuestion",
         back_populates="user_questions",
     )
