@@ -7,6 +7,7 @@ from openai import AsyncOpenAI, OpenAIError
 from src.application.directions.dtos import SalaryDTO, DirectionDTO
 from src.application.skills.dtos import SkillDTO
 from src.application.skills.dtos import UserSkillDTO
+from src.application.questions.dtos import QuestionDTO
 from src.domain.value_objects import ChatGPTModel
 
 
@@ -278,6 +279,98 @@ class OpenAIService:
                         skill=SkillDTO(name=name),
                         to_learn=True,
                         match_percentage=match_percentage_value,
+                    )
+                )
+
+            return result
+
+        except Exception:
+            logger.exception("Unexpected AI parsing error")
+            return []
+
+    async def get_skill_theoretical_questions(
+            self,
+            skill_name: str,
+            model: ChatGPTModel,
+            temperature: float = 0.3,
+    ) -> List[QuestionDTO]:
+
+        if not 0 <= temperature <= 2:
+            raise ValueError("temperature must be between 0 and 2")
+
+        prompt = f"""
+        You are a senior technical interviewer.
+
+        Given a skill name, generate a complete set of theoretical interview questions
+        and their ideal answers for that skill. Include all key theory areas needed
+        to assess the skill.
+
+        Skill: {skill_name}
+
+        REQUIREMENTS:
+        1. Questions must be theoretical (concepts, principles, tradeoffs).
+        2. Answers must be concise (2-5 sentences).
+        3. Return ONLY valid JSON in the format below.
+
+        {{
+          "questions": [
+            {{
+              "question": "string",
+              "ideal_answer": "string"
+            }}
+          ]
+        }}
+        """
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=model.value,
+                temperature=temperature,
+                messages=[
+                    {"role": "user", "content": prompt},
+                ],
+            )
+
+            content = response.choices[0].message.content if response.choices else None
+
+            if not content:
+                logger.error("Empty response from AI")
+                return []
+
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+
+            if not json_match:
+                logger.error(f"No JSON found in response: {content}")
+                return []
+
+            clean_json = json_match.group()
+            parsed = json.loads(clean_json)
+
+            questions_list = parsed.get("questions", [])
+            if not isinstance(questions_list, list):
+                return []
+
+            result: List[QuestionDTO] = []
+            for item in questions_list:
+                if not isinstance(item, dict):
+                    continue
+
+                question = item.get("question", "")
+                ideal_answer = item.get("ideal_answer", "")
+
+                if not isinstance(question, str) or not isinstance(ideal_answer, str):
+                    continue
+
+                question = question.strip()
+                ideal_answer = ideal_answer.strip()
+
+                if not question or not ideal_answer:
+                    continue
+
+                result.append(
+                    QuestionDTO(
+                        question=question,
+                        ideal_answer=ideal_answer,
                     )
                 )
 

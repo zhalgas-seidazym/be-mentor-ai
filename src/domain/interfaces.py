@@ -2,6 +2,7 @@ from typing import Protocol, Optional, List
 
 from src.application.directions.dtos import SalaryDTO
 from src.application.skills.dtos import UserSkillDTO
+from src.application.questions.dtos import QuestionDTO
 from src.domain.value_objects import ChatGPTModel
 
 
@@ -58,4 +59,12 @@ class IOpenAIService(Protocol):
         model: ChatGPTModel,
         temperature: float = 0.3,
     ) -> List[UserSkillDTO]:
+        ...
+
+    async def get_skill_theoretical_questions(
+        self,
+        skill_name: str,
+        model: ChatGPTModel,
+        temperature: float = 0.3,
+    ) -> List[QuestionDTO]:
         ...
