@@ -6,7 +6,7 @@ from openai import AsyncOpenAI, OpenAIError
 
 from src.application.directions.dtos import SalaryDTO, DirectionDTO
 from src.application.skills.dtos import SkillDTO
-from src.application.users.dtos import UserSkillDTO
+from src.application.skills.dtos import UserSkillDTO
 from src.domain.value_objects import ChatGPTModel
 
 

@@ -1,4 +1,6 @@
-from sqlalchemy import Integer, String
+from typing import Optional
+
+from sqlalchemy import Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infrastructure.dbs.postgre import Base
@@ -25,4 +27,39 @@ class Skill(Base, TimestampMixin):
         "UserSkill",
         back_populates="skill",
         cascade="all, delete-orphan",
+    )
+
+
+class UserSkill(Base):
+    __tablename__ = "user_skills"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    skill_id: Mapped[int] = mapped_column(
+        ForeignKey("skills.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    to_learn: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    match_percentage: Mapped[Optional[float]] = mapped_column(
+        nullable=True,
+    )
+
+    # --- Relations ---
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="user_skills",
+    )
+
+    skill: Mapped["Skill"] = relationship(
+        "Skill",
+        back_populates="user_skills",
     )

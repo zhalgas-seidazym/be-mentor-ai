@@ -3,7 +3,8 @@
 from fastapi import APIRouter, status as s, Query, Depends, Body
 
 from src.application.skills.dtos import SkillDTO
-from src.application.users.dtos import UserDTO, UserSkillDTO
+from src.application.users.dtos import UserDTO
+from src.application.skills.dtos import UserSkillDTO
 from src.application.skills.interfaces import ISkillController
 from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO

@@ -1,7 +1,7 @@
 from typing import Protocol, Optional, List
 
 from src.application.directions.dtos import SalaryDTO
-from src.application.users.dtos import UserSkillDTO
+from src.application.skills.dtos import UserSkillDTO
 from src.domain.value_objects import ChatGPTModel
 
 

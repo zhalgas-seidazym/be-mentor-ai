@@ -3,7 +3,8 @@
 from fastapi import APIRouter, status as s, Query, Depends
 
 from src.application.modules.interfaces import IModuleController
-from src.application.users.dtos import UserDTO, UserSkillDTO
+from src.application.users.dtos import UserDTO
+from src.application.skills.dtos import UserSkillDTO
 from src.domain.base_dto import PaginationDTO
 from src.domain.base_schema import PaginationSchema
 from src.domain.responses import RESPONSE_401

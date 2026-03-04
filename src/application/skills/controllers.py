@@ -2,10 +2,8 @@ from typing import Optional, Dict, List
 
 from fastapi import HTTPException, status as s
 
-from src.application.skills.dtos import SkillDTO
-from src.application.skills.interfaces import ISkillController, ISkillSearchService, ISkillRepository
-from src.application.users.interfaces import IUserSkillRepository
-from src.application.users.dtos import UserSkillDTO
+from src.application.skills.dtos import SkillDTO, UserSkillDTO
+from src.application.skills.interfaces import ISkillController, ISkillSearchService, ISkillRepository, IUserSkillRepository
 from src.domain.base_dto import PaginationDTO
 from src.domain.interfaces import IUoW
 

@@ -5,15 +5,13 @@ from fastapi import HTTPException, status as s
 from src.application.users.dtos import UserDTO
 from src.application.directions.interfaces import IDirectionRepository
 from src.application.locations.interfaces import ICityRepository
-from src.application.skills.dtos import SkillDTO
-from src.application.skills.interfaces import ISkillRepository
-from src.application.users.dtos import UserSkillDTO
+from src.application.skills.dtos import SkillDTO, UserSkillDTO
+from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository
 from src.application.users.interfaces import (
     IUserController,
     IUserRepository,
     IEmailOtpService,
     IHashService,
-    IUserSkillRepository,
 )
 from src.domain.interfaces import IUoW, IJWTService, IOpenAIService
 from src.domain.value_objects import TokenType, ChatGPTModel

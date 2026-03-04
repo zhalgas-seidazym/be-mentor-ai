@@ -1,7 +1,7 @@
 ﻿from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from src.application.users.dtos import UserSkillDTO
+from src.application.skills.dtos import UserSkillDTO
 from src.domain.base_dto import PaginationDTO
 
 

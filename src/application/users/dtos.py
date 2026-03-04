@@ -4,16 +4,8 @@ from typing import Optional, List
 
 from src.application.directions.dtos import DirectionDTO
 from src.application.locations.dtos import CityDTO
-from src.application.skills.dtos import SkillDTO
+from src.application.skills.dtos import SkillDTO, UserSkillDTO
 
-
-@dataclass
-class UserSkillDTO:
-    user_id: Optional[int] = None
-    skill_id: Optional[int] = None
-    skill: Optional[SkillDTO] = None
-    to_learn: Optional[bool] = None
-    match_percentage: Optional[float] = None
 
 @dataclass
 class UserDTO:

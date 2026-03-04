@@ -7,8 +7,10 @@ from src.application.locations.interfaces import ICountryRepository, ICityReposi
 from src.application.locations.repositories import CountryRepository, CityRepository
 from src.application.skills.interfaces import ISkillRepository
 from src.application.skills.repositories import SkillRepository
-from src.application.users.interfaces import IUserRepository, IUserSkillRepository
-from src.application.users.repositories import UserRepository, UserSkillRepository
+from src.application.users.interfaces import IUserRepository
+from src.application.users.repositories import UserRepository
+from src.application.skills.interfaces import IUserSkillRepository
+from src.application.skills.repositories import UserSkillRepository
 from src.presentation.depends.session import get_session
 
 

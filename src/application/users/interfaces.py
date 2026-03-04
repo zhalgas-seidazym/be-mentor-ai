@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, Protocol
 
-from src.application.users.dtos import UserDTO, UserSkillDTO
-from src.domain.base_dto import PaginationDTO
+from src.application.users.dtos import UserDTO
 
 
 class IUserRepository(ABC):
@@ -37,35 +36,6 @@ class IUserRepository(ABC):
 
     @abstractmethod
     async def delete(self, user_id: int) -> bool: ...
-
-class IUserSkillRepository(ABC):
-
-    @abstractmethod
-    async def get_by_user_id(
-        self,
-        user_id: int,
-        pagination: Optional[PaginationDTO[UserSkillDTO]] = None,
-        populate_skill: bool = False,
-        to_learn: Optional[bool] = None,
-    ) -> PaginationDTO[UserSkillDTO]: ...
-
-    @abstractmethod
-    async def add(self, dto: UserSkillDTO) -> Optional[UserSkillDTO]: ...
-
-    @abstractmethod
-    async def update(
-        self,
-        user_id: int,
-        skill_id: int,
-        dto: UserSkillDTO,
-    ) -> Optional[UserSkillDTO]: ...
-
-    @abstractmethod
-    async def delete(
-        self,
-        user_id: int,
-        skill_id: int,
-    ) -> bool: ...
 
 class IUserController(ABC):
     @abstractmethod

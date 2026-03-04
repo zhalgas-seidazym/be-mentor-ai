@@ -13,14 +13,13 @@ from src.application.modules.controllers import ModuleController
 from src.application.modules.interfaces import IModuleController
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
-from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService
+from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService, IUserSkillRepository
 from src.application.users.controllers import UserController
 from src.application.users.interfaces import (
     IUserRepository,
     IEmailOtpService,
     IUserController,
     IHashService,
-    IUserSkillRepository,
 )
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *

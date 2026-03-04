@@ -1,8 +1,8 @@
 ﻿from typing import List, Optional
 
 from src.application.modules.interfaces import IModuleController
-from src.application.users.dtos import UserSkillDTO
-from src.application.users.interfaces import IUserSkillRepository
+from src.application.skills.dtos import UserSkillDTO
+from src.application.skills.interfaces import IUserSkillRepository
 from src.domain.base_dto import PaginationDTO
 
 
