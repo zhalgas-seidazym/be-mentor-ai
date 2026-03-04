@@ -70,6 +70,13 @@ class IUserQuestionRepository(ABC):
 
 class IQuestionController(ABC):
     @abstractmethod
+    async def get_by_id(
+        self,
+        question_id: int,
+        populate_skill: bool = False,
+    ) -> Optional[QuestionDTO]: ...
+
+    @abstractmethod
     async def get_by_skill_id(
         self,
         skill_id: int,

@@ -1,5 +1,7 @@
 ﻿from typing import Optional
 
+from fastapi import HTTPException, status as s
+
 from src.application.questions.dtos import QuestionDTO
 from src.application.questions.interfaces import IQuestionController, IQuestionRepository
 from src.domain.base_dto import PaginationDTO
@@ -11,6 +13,19 @@ class QuestionController(IQuestionController):
         question_repository: IQuestionRepository,
     ):
         self._question_repository = question_repository
+
+    async def get_by_id(
+        self,
+        question_id: int,
+        populate_skill: bool = False,
+    ) -> Optional[QuestionDTO]:
+        res = await self._question_repository.get_by_id(
+            question_id=question_id,
+            populate_skill=populate_skill,
+        )
+        if res is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Question {question_id} not found")
+        return res
 
     async def get_by_skill_id(
         self,
