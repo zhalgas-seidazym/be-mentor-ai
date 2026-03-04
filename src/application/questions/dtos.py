@@ -22,4 +22,5 @@ class UserQuestionDTO:
     user_answer: Optional[str] = None
     feedback: Optional[str] = None
     status: Optional[QuestionStatus] = None
+    interview_question_id: Optional[int] = None
     question: Optional[QuestionDTO] = None

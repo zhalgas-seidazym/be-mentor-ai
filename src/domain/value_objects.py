@@ -16,3 +16,8 @@ class ChatGPTModel(str, Enum):
 class QuestionStatus(str, Enum):
     SATISFACTORY = "satisfactory"
     UNSATISFACTORY = "unsatisfactory"
+
+
+class InterviewStatus(str, Enum):
+    ACTIVE = "active"
+    COMPLETED = "completed"

@@ -1,16 +1,11 @@
-﻿from enum import Enum
-from typing import Optional
+﻿from typing import Optional
 
 from sqlalchemy import Integer, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infrastructure.dbs.postgre import Base
 from src.domain.base_model import TimestampMixin
-
-
-class InterviewStatus(str, Enum):
-    ACTIVE = "active"
-    COMPLETED = "completed"
+from src.domain.value_objects import InterviewStatus
 
 
 class InterviewSession(Base, TimestampMixin):

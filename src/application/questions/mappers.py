@@ -71,6 +71,7 @@ def user_question_orm_to_dto(
         user_answer=row.user_answer,
         feedback=row.feedback,
         status=row.status,
+        interview_question_id=row.interview_question_id,
         question=question_dto,
     )
 
@@ -98,5 +99,8 @@ def user_question_dto_to_orm(
 
     if dto.status is not None:
         row.status = dto.status
+
+    if dto.interview_question_id is not None:
+        row.interview_question_id = dto.interview_question_id
 
     return row
