@@ -68,6 +68,24 @@ async def direction_autocomplete(
     return await controller.direction_autocomplete(PaginationDTO[DirectionDTO](**pagination.dict()), q=q)
 
 @router.get(
+    '/salary/my',
+    status_code=s.HTTP_200_OK,
+    response_model=SalaryDTO,
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+        s.HTTP_408_REQUEST_TIMEOUT: RESPONSE_408,
+    }
+)
+async def get_my_salary(
+        controller: Annotated[IDirectionSalaryController, Depends(get_direction_salary_controller)],
+        user: UserDTO = Depends(get_access_user),
+):
+    return await controller.get_my_salary(user=user)
+
+@router.get(
     '/{direction_id}',
     status_code=s.HTTP_200_OK,
     response_model=DirectionDTO,

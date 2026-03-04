@@ -3,6 +3,7 @@
 from fastapi import HTTPException, status as s
 
 from src.application.directions.dtos import SalaryDTO, DirectionDTO, ProgressStatisticsDTO
+from src.application.users.dtos import UserDTO
 from src.application.directions.interfaces import (
     IDirectionSalaryController,
     ISalaryRepository,
@@ -159,3 +160,64 @@ class DirectionSalaryController(IDirectionSalaryController):
             user_id: int,
     ) -> ProgressStatisticsDTO:
         return await self._direction_statistics_service.get_statistics(user_id=user_id)
+
+    async def get_my_salary(
+            self,
+            user: UserDTO,
+    ) -> Optional[SalaryDTO]:
+        if not user.city_id or not user.direction_id:
+            raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="User city_id or direction_id not set")
+
+        city_id = user.city_id
+        direction_id = user.direction_id
+
+        salary = await self._salary_repository.get_by_city_and_direction(
+            city_id=city_id,
+            direction_id=direction_id,
+            populate_city=True,
+            populate_direction=True,
+        )
+        if salary is not None:
+            return salary
+
+        city = await self._city_repository.get_by_id(city_id, populate_country=True)
+        if not city:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"City {city_id} not found")
+        if not city.country or not city.country.name:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="City country not found")
+
+        direction = await self._direction_repository.get_by_id(direction_id)
+        if not direction:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Direction {direction_id} not found")
+
+        ai_salary = await self._openai_service.get_direction_salary(
+            country=city.country.name,
+            city=city.name or "",
+            direction=direction.name or "",
+            model=ChatGPTModel.GPT_4_1,
+        )
+        if not ai_salary:
+            raise HTTPException(
+                status_code=s.HTTP_408_REQUEST_TIMEOUT,
+                detail="Failed to generate salary, please try again"
+            )
+
+        async with self._uow:
+            await self._salary_repository.add(
+                SalaryDTO(
+                    city_id=city_id,
+                    direction_id=direction_id,
+                    amount=ai_salary["amount"],
+                    currency=ai_salary["currency"],
+                )
+            )
+
+        salary = await self._salary_repository.get_by_city_and_direction(
+            city_id=city_id,
+            direction_id=direction_id,
+            populate_city=True,
+            populate_direction=True,
+        )
+        if salary is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Salary not found")
+        return salary

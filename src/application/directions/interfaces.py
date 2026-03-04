@@ -2,6 +2,7 @@
 from typing import Optional, List
 
 from src.application.directions.dtos import DirectionDTO, SalaryDTO, ProgressStatisticsDTO
+from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
 
 
@@ -125,6 +126,12 @@ class IDirectionSalaryController(ABC):
             self,
             user_id: int,
     ) -> ProgressStatisticsDTO: ...
+
+    @abstractmethod
+    async def get_my_salary(
+            self,
+            user: UserDTO,
+    ) -> Optional[SalaryDTO]: ...
 
 class IDirectionSearchService(ABC):
 

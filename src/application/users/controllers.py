@@ -3,12 +3,13 @@
 from fastapi import HTTPException, status as s
 
 from src.application.users.dtos import UserDTO
-from src.application.directions.interfaces import IDirectionRepository
+from src.application.directions.interfaces import IDirectionRepository, ISalaryRepository
 from src.application.locations.interfaces import ICityRepository
 from src.application.skills.dtos import SkillDTO, UserSkillDTO
 from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository
 from src.application.questions.dtos import QuestionDTO
 from src.application.questions.interfaces import IQuestionRepository
+from src.application.directions.dtos import SalaryDTO
 from src.application.users.interfaces import (
     IUserController,
     IUserRepository,
@@ -29,6 +30,7 @@ class UserController(IUserController):
             skill_repository: ISkillRepository,
             question_repository: IQuestionRepository,
             direction_repository: IDirectionRepository,
+            salary_repository: ISalaryRepository,
             city_repository: ICityRepository,
             openai_service: IOpenAIService,
             email_otp_service: IEmailOtpService,
@@ -41,6 +43,7 @@ class UserController(IUserController):
         self._skill_repository = skill_repository
         self._question_repository = question_repository
         self._direction_repository = direction_repository
+        self._salary_repository = salary_repository
         self._city_repository = city_repository
         self._openai_service = openai_service
         self._email_otp_service = email_otp_service
@@ -172,13 +175,18 @@ class UserController(IUserController):
             raise HTTPException(status_code=s.HTTP_409_CONFLICT, detail="User already onboarding")
 
         # Validate city and direction references
-        city = await self._city_repository.get_by_id(city_id)
+        city = await self._city_repository.get_by_id(city_id, populate_country=True)
         if not city:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"City {city_id} not found")
 
         direction = await self._direction_repository.get_by_id(direction_id)
         if not direction:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Direction {direction_id} not found")
+
+        existing_salary = await self._salary_repository.get_by_city_and_direction(
+            city_id=city_id,
+            direction_id=direction_id,
+        )
 
         # Load selected skills and prepare list for AI
         skill_name_list = []
@@ -211,6 +219,32 @@ class UserController(IUserController):
             user = await self._user_repository.update(user_id=user_id, dto=user_update)
             if user is None:
                 raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
+
+            # Ensure salary exists for user's city and direction
+            if existing_salary is None:
+                if not city.country or not city.country.name:
+                    raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="City country not found")
+
+                ai_salary = await self._openai_service.get_direction_salary(
+                    country=city.country.name,
+                    city=city.name or "",
+                    direction=direction.name or "",
+                    model=ChatGPTModel.GPT_4_1,
+                )
+                if not ai_salary:
+                    raise HTTPException(
+                        status_code=s.HTTP_408_REQUEST_TIMEOUT,
+                        detail="Failed to generate salary, please try again"
+                    )
+
+                await self._salary_repository.add(
+                    SalaryDTO(
+                        city_id=city_id,
+                        direction_id=direction_id,
+                        amount=ai_salary["amount"],
+                        currency=ai_salary["currency"],
+                    )
+                )
 
             # Attach selected skills to the user
             for skill_id in unique_skill_ids:

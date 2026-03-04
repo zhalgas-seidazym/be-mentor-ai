@@ -474,3 +474,75 @@ class OpenAIService:
             logger.exception("Unexpected AI parsing error")
             return {}
 
+    async def get_direction_salary(
+            self,
+            country: str,
+            city: str,
+            direction: str,
+            model: ChatGPTModel,
+            temperature: float = 0.3,
+    ) -> dict:
+        if not 0 <= temperature <= 2:
+            raise ValueError("temperature must be between 0 and 2")
+
+        prompt = f"""
+        You are a labor market analyst.
+
+        Estimate a realistic entry-level monthly gross salary for the given direction
+        in the specified city and country.
+
+        Country: {country}
+        City: {city}
+        Direction: {direction}
+
+        REQUIREMENTS:
+        1. Salary must be monthly gross.
+        2. Currency must match the official currency of the country.
+        3. Return ONLY valid JSON:
+
+        {{
+          "amount": 0,
+          "currency": "string"
+        }}
+        """
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=model.value,
+                temperature=temperature,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            content = response.choices[0].message.content if response.choices else None
+            if not content:
+                logger.error("Empty response from AI")
+                return {}
+
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if not json_match:
+                logger.error(f"No JSON found in response: {content}")
+                return {}
+
+            clean_json = json_match.group()
+            parsed = json.loads(clean_json)
+
+            amount = parsed.get("amount")
+            currency = parsed.get("currency")
+
+            try:
+                amount_value = float(amount)
+            except (TypeError, ValueError):
+                return {}
+
+            if not isinstance(currency, str) or not currency.strip():
+                return {}
+
+            return {
+                "amount": amount_value,
+                "currency": currency.strip(),
+            }
+
+        except Exception:
+            logger.exception("Unexpected AI parsing error")
+            return {}
+

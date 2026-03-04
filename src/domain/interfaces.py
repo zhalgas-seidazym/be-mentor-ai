@@ -85,3 +85,13 @@ class IOpenAIService(Protocol):
         temperature: float = 0.2,
     ) -> dict:
         ...
+
+    async def get_direction_salary(
+        self,
+        country: str,
+        city: str,
+        direction: str,
+        model: ChatGPTModel,
+        temperature: float = 0.3,
+    ) -> dict:
+        ...
