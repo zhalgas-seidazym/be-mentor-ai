@@ -66,3 +66,13 @@ class IUserQuestionRepository(ABC):
 
     @abstractmethod
     async def delete(self, user_question_id: int) -> bool: ...
+
+
+class IQuestionController(ABC):
+    @abstractmethod
+    async def get_by_skill_id(
+        self,
+        skill_id: int,
+        pagination: Optional[PaginationDTO[QuestionDTO]] = None,
+        populate_skill: bool = False,
+    ) -> PaginationDTO[QuestionDTO]: ...

@@ -12,6 +12,7 @@ from src.presentation.routers import (
     locations_router as lr,
     directions_router as dr,
     modules_router as mr,
+    questions_router as qr,
 )
 
 
@@ -36,3 +37,4 @@ app.include_router(sr.router)
 app.include_router(lr.router)
 app.include_router(dr.router)
 app.include_router(mr.router)
+app.include_router(qr.router)

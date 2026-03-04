@@ -11,7 +11,8 @@ from src.application.directions.interfaces import (
 from src.application.locations.controllers import LocationController
 from src.application.modules.controllers import ModuleController
 from src.application.modules.interfaces import IModuleController
-from src.application.questions.interfaces import IQuestionRepository
+from src.application.questions.controllers import QuestionController
+from src.application.questions.interfaces import IQuestionRepository, IQuestionController
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
 from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService, IUserSkillRepository
@@ -74,6 +75,13 @@ async def get_module_controller(
 ) -> IModuleController:
     return ModuleController(
         user_skill_repository=user_skill_repository,
+    )
+
+async def get_question_controller(
+        question_repository: IQuestionRepository = Depends(get_question_repository),
+) -> IQuestionController:
+    return QuestionController(
+        question_repository=question_repository,
     )
 
 async def get_location_controller(
