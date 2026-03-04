@@ -1,16 +1,16 @@
-from fastapi import Depends
+﻿from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.directions.interfaces import IDirectionRepository, ISalaryRepository
 from src.application.directions.repositories import DirectionRepository, SalaryRepository
 from src.application.locations.interfaces import ICountryRepository, ICityRepository
 from src.application.locations.repositories import CountryRepository, CityRepository
-from src.application.skills.interfaces import ISkillRepository
-from src.application.skills.repositories import SkillRepository
+from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository
+from src.application.skills.repositories import SkillRepository, UserSkillRepository
 from src.application.users.interfaces import IUserRepository
 from src.application.users.repositories import UserRepository
-from src.application.skills.interfaces import IUserSkillRepository
-from src.application.skills.repositories import UserSkillRepository
+from src.application.questions.interfaces import IQuestionRepository, IUserQuestionRepository
+from src.application.questions.repositories import QuestionRepository, UserQuestionRepository
 from src.presentation.depends.session import get_session
 
 
@@ -38,6 +38,16 @@ async def get_user_skill_repository(
         session: AsyncSession = Depends(get_session),
 ) -> IUserSkillRepository:
     return UserSkillRepository(session)
+
+async def get_question_repository(
+        session: AsyncSession = Depends(get_session),
+) -> IQuestionRepository:
+    return QuestionRepository(session)
+
+async def get_user_question_repository(
+        session: AsyncSession = Depends(get_session),
+) -> IUserQuestionRepository:
+    return UserQuestionRepository(session)
 
 async def get_direction_repository(
         session: AsyncSession = Depends(get_session),
