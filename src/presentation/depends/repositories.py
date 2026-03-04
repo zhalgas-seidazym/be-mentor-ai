@@ -11,6 +11,8 @@ from src.application.users.interfaces import IUserRepository
 from src.application.users.repositories import UserRepository
 from src.application.questions.interfaces import IQuestionRepository, IUserQuestionRepository
 from src.application.questions.repositories import QuestionRepository, UserQuestionRepository
+from src.application.interview.interfaces import IInterviewSessionRepository, IInterviewQuestionRepository
+from src.application.interview.repositories import InterviewSessionRepository, InterviewQuestionRepository
 from src.presentation.depends.session import get_session
 
 
@@ -48,6 +50,16 @@ async def get_user_question_repository(
         session: AsyncSession = Depends(get_session),
 ) -> IUserQuestionRepository:
     return UserQuestionRepository(session)
+
+async def get_interview_session_repository(
+        session: AsyncSession = Depends(get_session),
+) -> IInterviewSessionRepository:
+    return InterviewSessionRepository(session)
+
+async def get_interview_question_repository(
+        session: AsyncSession = Depends(get_session),
+) -> IInterviewQuestionRepository:
+    return InterviewQuestionRepository(session)
 
 async def get_direction_repository(
         session: AsyncSession = Depends(get_session),

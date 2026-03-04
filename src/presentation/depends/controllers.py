@@ -25,6 +25,8 @@ from src.application.users.interfaces import (
     IUserController,
     IHashService,
 )
+from src.application.interview.controllers import InterviewController
+from src.application.interview.interfaces import IInterviewController, IInterviewSessionRepository, IInterviewQuestionRepository
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
 from src.presentation.depends.session import get_uow
@@ -93,6 +95,21 @@ async def get_question_controller(
     return QuestionController(
         question_repository=question_repository,
         user_question_repository=user_question_repository,
+    )
+
+async def get_interview_controller(
+        interview_session_repository: IInterviewSessionRepository = Depends(get_interview_session_repository),
+        interview_question_repository: IInterviewQuestionRepository = Depends(get_interview_question_repository),
+        question_repository: IQuestionRepository = Depends(get_question_repository),
+        user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        uow: IUoW = Depends(get_uow),
+) -> IInterviewController:
+    return InterviewController(
+        interview_session_repository=interview_session_repository,
+        interview_question_repository=interview_question_repository,
+        question_repository=question_repository,
+        user_skill_repository=user_skill_repository,
+        uow=uow,
     )
 
 async def get_location_controller(

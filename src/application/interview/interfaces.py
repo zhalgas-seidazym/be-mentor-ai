@@ -33,3 +33,8 @@ class IInterviewQuestionRepository(ABC):
 
     @abstractmethod
     async def count_followups(self, session_id: int, main_question_id: int) -> int: ...
+
+
+class IInterviewController(ABC):
+    @abstractmethod
+    async def start(self, user_id: int) -> dict: ...
