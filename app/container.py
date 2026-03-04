@@ -3,6 +3,7 @@ from dependency_injector import containers, providers
 from app.settings import Settings
 from src.application.skills.services import SkillSearchService
 from src.application.directions.services import DirectionSearchService
+from src.application.modules.services import ModuleStatisticsService
 from src.application.users.services import EmailOtpService, HashService
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
@@ -76,4 +77,8 @@ class Container(containers.DeclarativeContainer):
     openai_service = providers.Factory(
         OpenAIService,
         OPENAI_API_KEY=settings.OPENAI_API_KEY,
+    )
+
+    module_statistics_service = providers.Factory(
+        ModuleStatisticsService,
     )

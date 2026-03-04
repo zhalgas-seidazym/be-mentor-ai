@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -152,6 +152,8 @@ class UserSkillRepository(IUserSkillRepository):
 
         if to_learn is not None:
             base_query = base_query.where(UserSkill.to_learn == to_learn)
+            if to_learn is True:
+                base_query = base_query.order_by(desc(UserSkill.match_percentage))
 
         count_query = select(func.count()).select_from(base_query.subquery())
         count_result = await self._session.execute(count_query)

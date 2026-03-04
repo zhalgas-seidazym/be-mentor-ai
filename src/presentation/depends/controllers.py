@@ -13,6 +13,7 @@ from src.application.modules.controllers import ModuleController
 from src.application.modules.interfaces import IModuleController
 from src.application.questions.controllers import QuestionController
 from src.application.questions.interfaces import IQuestionRepository, IQuestionController, IUserQuestionRepository
+from src.application.modules.interfaces import IModuleStatisticsService
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
 from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService, IUserSkillRepository
@@ -72,9 +73,16 @@ async def get_skill_controller(
 
 async def get_module_controller(
         user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        question_repository: IQuestionRepository = Depends(get_question_repository),
+        user_question_repository: IUserQuestionRepository = Depends(get_user_question_repository),
 ) -> IModuleController:
+    module_statistics_service: IModuleStatisticsService = Container.module_statistics_service(
+        question_repository=question_repository,
+        user_question_repository=user_question_repository,
+    )
     return ModuleController(
         user_skill_repository=user_skill_repository,
+        module_statistics_service=module_statistics_service,
     )
 
 async def get_question_controller(
