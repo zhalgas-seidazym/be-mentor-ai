@@ -1,4 +1,4 @@
-from dependency_injector.wiring import inject, Provide
+﻿from dependency_injector.wiring import inject, Provide
 from fastapi import Depends
 
 from app.container import Container
@@ -7,6 +7,7 @@ from src.application.directions.interfaces import (
     IDirectionSalaryController,
     IDirectionSearchService,
     IDirectionRepository,
+    IDirectionStatisticsService,
 )
 from src.application.locations.controllers import LocationController
 from src.application.modules.controllers import ModuleController
@@ -111,7 +112,18 @@ async def get_direction_salary_controller(
         uow: IUoW = Depends(get_uow),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
         direction_search_service: IDirectionSearchService = Depends(Provide[Container.direction_search_service]),
+        user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        question_repository: IQuestionRepository = Depends(get_question_repository),
+        user_question_repository: IUserQuestionRepository = Depends(get_user_question_repository),
 ) -> IDirectionSalaryController:
+    module_statistics_service: IModuleStatisticsService = Container.module_statistics_service(
+        question_repository=question_repository,
+        user_question_repository=user_question_repository,
+    )
+    direction_statistics_service: IDirectionStatisticsService = Container.direction_statistics_service(
+        module_statistics_service=module_statistics_service,
+        user_skill_repository=user_skill_repository,
+    )
     return DirectionSalaryController(
         salary_repository=salary_repository,
         direction_repository=direction_repository,
@@ -119,4 +131,5 @@ async def get_direction_salary_controller(
         uow=uow,
         openai_service=openai_service,
         direction_search_service=direction_search_service,
+        direction_statistics_service=direction_statistics_service,
     )

@@ -1,9 +1,8 @@
-from dependency_injector import containers, providers
+﻿from dependency_injector import containers, providers
 
 from app.settings import Settings
 from src.application.skills.services import SkillSearchService
-from src.application.directions.services import DirectionSearchService
-from src.application.modules.services import ModuleStatisticsService
+from src.application.directions.services import DirectionSearchService, DirectionStatisticsService
 from src.application.users.services import EmailOtpService, HashService
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
@@ -11,6 +10,7 @@ from src.infrastructure.integrations.email_service import EmailService
 from src.infrastructure.integrations.es_client import ElasticsearchClient
 from src.infrastructure.integrations.jwt_service import JWTService
 from src.infrastructure.integrations.openai_service import OpenAIService
+from src.application.modules.services import ModuleStatisticsService
 
 
 class Container(containers.DeclarativeContainer):
@@ -81,4 +81,8 @@ class Container(containers.DeclarativeContainer):
 
     module_statistics_service = providers.Factory(
         ModuleStatisticsService,
+    )
+
+    direction_statistics_service = providers.Factory(
+        DirectionStatisticsService,
     )

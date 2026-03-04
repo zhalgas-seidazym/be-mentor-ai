@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
+﻿from abc import ABC, abstractmethod
 from typing import Optional, List
 
-from src.application.directions.dtos import DirectionDTO, SalaryDTO
+from src.application.directions.dtos import DirectionDTO, SalaryDTO, ProgressStatisticsDTO
 from src.domain.base_dto import PaginationDTO
 
 
@@ -85,6 +85,13 @@ class ISalaryRepository(ABC):
         salary_id: int,
     ) -> bool: ...
 
+class IDirectionStatisticsService(ABC):
+    @abstractmethod
+    async def get_statistics(
+        self,
+        user_id: int,
+    ) -> ProgressStatisticsDTO: ...
+
 class IDirectionSalaryController(ABC):
 
     @abstractmethod
@@ -106,6 +113,18 @@ class IDirectionSalaryController(ABC):
             self,
             name: str,
     ) -> DirectionDTO: ...
+
+    @abstractmethod
+    async def get_by_id(
+            self,
+            direction_id: int,
+    ) -> Optional[DirectionDTO]: ...
+
+    @abstractmethod
+    async def get_my_statistics(
+            self,
+            user_id: int,
+    ) -> ProgressStatisticsDTO: ...
 
 class IDirectionSearchService(ABC):
 
@@ -133,4 +152,3 @@ class IDirectionSearchService(ABC):
         name: Optional[str] = None,
         pagination: Optional[PaginationDTO[DirectionDTO]] = None,
     ) -> PaginationDTO[DirectionDTO]: ...
-

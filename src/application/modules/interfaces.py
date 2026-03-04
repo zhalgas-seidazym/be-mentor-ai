@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.application.skills.dtos import UserSkillDTO
 from src.domain.base_dto import PaginationDTO
-from src.application.modules.dtos import ModuleStatisticsDTO
+from src.application.directions.dtos import ProgressStatisticsDTO
 
 
 class IModuleStatisticsService(ABC):
@@ -12,7 +12,7 @@ class IModuleStatisticsService(ABC):
         self,
         user_id: int,
         module_id: int,
-    ) -> ModuleStatisticsDTO: ...
+    ) -> ProgressStatisticsDTO: ...
 
 
 class IModuleController(ABC):
@@ -29,4 +29,4 @@ class IModuleController(ABC):
         self,
         user_id: int,
         module_id: int,
-    ) -> ModuleStatisticsDTO: ...
+    ) -> ProgressStatisticsDTO: ...

@@ -1,9 +1,12 @@
-from typing import Optional, List
+﻿from typing import Optional, List
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
-from src.application.directions.dtos import DirectionDTO
+from src.application.directions.dtos import DirectionDTO, ProgressStatisticsDTO
+from src.application.directions.interfaces import IDirectionStatisticsService
+from src.application.modules.interfaces import IModuleStatisticsService
+from src.application.skills.interfaces import IUserSkillRepository
 from src.domain.base_dto import PaginationDTO
 
 
@@ -187,4 +190,56 @@ class DirectionSearchService:
             per_page=per_page,
             total=total,
             items=items,
+        )
+
+
+class DirectionStatisticsService(IDirectionStatisticsService):
+    def __init__(
+        self,
+        module_statistics_service: IModuleStatisticsService,
+        user_skill_repository: IUserSkillRepository,
+    ):
+        self._module_statistics_service = module_statistics_service
+        self._user_skill_repository = user_skill_repository
+
+    async def get_statistics(
+        self,
+        user_id: int,
+    ) -> ProgressStatisticsDTO:
+
+        modules = await self._user_skill_repository.get_by_user_id(
+            user_id=user_id,
+            to_learn=True,
+        )
+        skills = modules.items or []
+
+        total_questions = 0
+        met_questions = 0
+        correct_answers = 0
+        incorrect_answers = 0
+
+        for module in skills:
+            if module.skill_id is None:
+                continue
+
+            stats = await self._module_statistics_service.get_statistics(
+                user_id=user_id,
+                module_id=module.skill_id,
+            )
+
+            total_questions += stats.total_questions or 0
+            met_questions += stats.met_questions or 0
+            correct_answers += stats.correct_answers or 0
+            incorrect_answers += stats.incorrect_answers or 0
+
+        readiness_percentage = 0.0
+        if total_questions > 0:
+            readiness_percentage = (correct_answers / total_questions) * 100
+
+        return ProgressStatisticsDTO(
+            total_questions=total_questions,
+            met_questions=met_questions,
+            correct_answers=correct_answers,
+            incorrect_answers=incorrect_answers,
+            readiness_percentage=readiness_percentage,
         )

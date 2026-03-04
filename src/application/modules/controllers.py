@@ -3,7 +3,7 @@
 from fastapi import HTTPException, status as s
 
 from src.application.modules.interfaces import IModuleController, IModuleStatisticsService
-from src.application.modules.dtos import ModuleStatisticsDTO
+from src.application.directions.dtos import ProgressStatisticsDTO
 from src.application.skills.dtos import UserSkillDTO
 from src.application.skills.interfaces import IUserSkillRepository
 from src.domain.base_dto import PaginationDTO
@@ -35,7 +35,7 @@ class ModuleController(IModuleController):
         self,
         user_id: int,
         module_id: int,
-    ) -> ModuleStatisticsDTO:
+    ) -> ProgressStatisticsDTO:
         modules = await self._user_skill_repository.get_by_user_id(
             user_id=user_id,
             to_learn=True,

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, status as s, Query, Depends
 
 from src.application.modules.interfaces import IModuleController
-from src.application.modules.dtos import ModuleStatisticsDTO
+from src.application.directions.dtos import ProgressStatisticsDTO
 from src.application.skills.dtos import UserSkillDTO
 from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
@@ -41,7 +41,7 @@ async def get_my_modules(
 @router.get(
     "/{module_id}/statistics",
     status_code=s.HTTP_200_OK,
-    response_model=ModuleStatisticsDTO,
+    response_model=ProgressStatisticsDTO,
     response_model_exclude_none=True,
     responses={
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,

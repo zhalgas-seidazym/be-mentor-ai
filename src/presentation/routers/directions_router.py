@@ -1,8 +1,8 @@
-from typing import List, Annotated, Optional
+﻿from typing import List, Annotated, Optional
 
 from fastapi import APIRouter, status as s, Depends, Body, Query
 
-from src.application.directions.dtos import SalaryDTO, DirectionDTO
+from src.application.directions.dtos import SalaryDTO, DirectionDTO, ProgressStatisticsDTO
 from src.application.directions.interfaces import IDirectionSalaryController
 from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
@@ -66,3 +66,33 @@ async def direction_autocomplete(
         pagination: PaginationSchema = Depends(PaginationSchema.as_query())
 ):
     return await controller.direction_autocomplete(PaginationDTO[DirectionDTO](**pagination.dict()), q=q)
+
+@router.get(
+    '/{direction_id}',
+    status_code=s.HTTP_200_OK,
+    response_model=DirectionDTO,
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    }
+)
+async def get_direction_by_id(
+        controller: Annotated[IDirectionSalaryController, Depends(get_direction_salary_controller)],
+        direction_id: int,
+):
+    return await controller.get_by_id(direction_id)
+
+@router.get(
+    '/my/statistics',
+    status_code=s.HTTP_200_OK,
+    response_model=ProgressStatisticsDTO,
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+    }
+)
+async def get_direction_statistics(
+        controller: Annotated[IDirectionSalaryController, Depends(get_direction_salary_controller)],
+        user: UserDTO = Depends(get_access_user),
+):
+    return await controller.get_my_statistics(user_id=user.id)

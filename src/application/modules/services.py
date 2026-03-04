@@ -1,6 +1,6 @@
 ﻿from typing import Optional, Dict
 
-from src.application.modules.dtos import ModuleStatisticsDTO
+from src.application.directions.dtos import ProgressStatisticsDTO
 from src.application.modules.interfaces import IModuleStatisticsService
 from src.application.questions.interfaces import IQuestionRepository, IUserQuestionRepository
 from src.domain.value_objects import QuestionStatus
@@ -19,7 +19,7 @@ class ModuleStatisticsService(IModuleStatisticsService):
         self,
         user_id: int,
         module_id: int,
-    ) -> ModuleStatisticsDTO:
+    ) -> ProgressStatisticsDTO:
 
         questions_page = await self._question_repository.get(
             pagination=None,
@@ -56,7 +56,7 @@ class ModuleStatisticsService(IModuleStatisticsService):
         if total_questions > 0:
             readiness_percentage = (correct_answers / total_questions) * 100
 
-        return ModuleStatisticsDTO(
+        return ProgressStatisticsDTO(
             total_questions=total_questions,
             met_questions=met_questions,
             correct_answers=correct_answers,

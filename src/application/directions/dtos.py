@@ -1,8 +1,17 @@
-from dataclasses import dataclass
+﻿from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
 from src.application.locations.dtos import CityDTO
+
+
+@dataclass
+class ProgressStatisticsDTO:
+    total_questions: Optional[int] = None
+    met_questions: Optional[int] = None
+    correct_answers: Optional[int] = None
+    incorrect_answers: Optional[int] = None
+    readiness_percentage: Optional[float] = None
 
 
 @dataclass
@@ -21,9 +30,7 @@ class SalaryDTO:
     city_id: Optional[int] = None
     amount: Optional[float] = None
     currency: Optional[str] = None
-
     direction: Optional[DirectionDTO] = None
     city: Optional[CityDTO] = None
-
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

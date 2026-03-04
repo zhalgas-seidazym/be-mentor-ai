@@ -1,13 +1,14 @@
-from typing import List, Optional
+﻿from typing import List, Optional
 
 from fastapi import HTTPException, status as s
 
-from src.application.directions.dtos import SalaryDTO, DirectionDTO
+from src.application.directions.dtos import SalaryDTO, DirectionDTO, ProgressStatisticsDTO
 from src.application.directions.interfaces import (
     IDirectionSalaryController,
     ISalaryRepository,
     IDirectionRepository,
     IDirectionSearchService,
+    IDirectionStatisticsService,
 )
 from src.application.locations.interfaces import ICityRepository
 from src.domain.interfaces import IOpenAIService, IUoW
@@ -25,6 +26,7 @@ class DirectionSalaryController(IDirectionSalaryController):
             uow: IUoW,
             openai_service: IOpenAIService,
             direction_search_service: IDirectionSearchService,
+            direction_statistics_service: IDirectionStatisticsService,
     ):
         self._salary_repository = salary_repository
         self._direction_repository = direction_repository
@@ -32,6 +34,7 @@ class DirectionSalaryController(IDirectionSalaryController):
         self._uow = uow
         self._openai_service = openai_service
         self._direction_search_service = direction_search_service
+        self._direction_statistics_service = direction_statistics_service
 
     async def get_ai_directions(
             self,
@@ -56,17 +59,17 @@ class DirectionSalaryController(IDirectionSalaryController):
 
             item.city_id = city.id
 
-            # 1️⃣ Проверяем direction
+            # 1пёЏвѓЈ РџСЂРѕРІРµСЂСЏРµРј direction
             direction = await self._direction_repository.get_by_name(item.direction.name)
 
             if not direction:
                 async with self._uow:
                     direction = await self._direction_repository.add(item.direction)
 
-            # теперь direction гарантированно существует
+            # С‚РµРїРµСЂСЊ direction РіР°СЂР°РЅС‚РёСЂРѕРІР°РЅРЅРѕ СЃСѓС‰РµСЃС‚РІСѓРµС‚
             item.direction_id = direction.id
 
-            # 2️⃣ Проверяем salary
+            # 2пёЏвѓЈ РџСЂРѕРІРµСЂСЏРµРј salary
             existing_salary = await self._salary_repository.get_by_city_and_direction(
                 city.id,
                 direction.id
@@ -144,3 +147,18 @@ class DirectionSalaryController(IDirectionSalaryController):
         )
 
         return direction
+
+    async def get_by_id(
+            self,
+            direction_id: int,
+    ) -> Optional[DirectionDTO]:
+        res = await self._direction_repository.get_by_id(direction_id)
+        if res is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Direction {direction_id} not found")
+        return res
+
+    async def get_my_statistics(
+            self,
+            user_id: int,
+    ) -> ProgressStatisticsDTO:
+        return await self._direction_statistics_service.get_statistics(user_id=user_id)
