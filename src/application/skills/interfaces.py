@@ -19,13 +19,13 @@ class ISkillRepository(ABC):
     ) -> PaginationDTO[SkillDTO]: ...
 
     @abstractmethod
-    async def add(self, name: str) -> Optional[SkillDTO]: ...
+    async def add(self, dto: SkillDTO) -> Optional[SkillDTO]: ...
 
     @abstractmethod
     async def update(
         self,
         skill_id: int,
-        name: str,
+        dto: SkillDTO,
     ) -> Optional[SkillDTO]: ...
 
     @abstractmethod

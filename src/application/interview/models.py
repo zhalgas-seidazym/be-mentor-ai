@@ -1,6 +1,6 @@
-﻿from typing import Optional
+﻿from typing import Optional, List
 
-from sqlalchemy import Integer, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Integer, ForeignKey, Enum as SQLEnum, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.infrastructure.dbs.postgre import Base
@@ -47,7 +47,7 @@ class InterviewSession(Base, TimestampMixin):
         back_populates="interview_sessions",
     )
 
-    questions: Mapped[list["InterviewQuestion"]] = relationship(
+    questions: Mapped[List["InterviewQuestion"]] = relationship(
         "InterviewQuestion",
         back_populates="session",
         cascade="all, delete-orphan",
@@ -71,6 +71,11 @@ class InterviewQuestion(Base, TimestampMixin):
 
     question_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("questions.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+
+    question_text: Mapped[Optional[str]] = mapped_column(
+        Text,
         nullable=True,
     )
 
@@ -104,7 +109,7 @@ class InterviewQuestion(Base, TimestampMixin):
         remote_side=[id],
     )
 
-    user_questions: Mapped[list["UserQuestion"]] = relationship(
+    user_questions: Mapped[List["UserQuestion"]] = relationship(
         "UserQuestion",
         back_populates="interview_question",
     )

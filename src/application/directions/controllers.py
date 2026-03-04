@@ -59,17 +59,14 @@ class DirectionSalaryController(IDirectionSalaryController):
 
             item.city_id = city.id
 
-            # 1пёЏвѓЈ РџСЂРѕРІРµСЂСЏРµРј direction
             direction = await self._direction_repository.get_by_name(item.direction.name)
 
             if not direction:
                 async with self._uow:
                     direction = await self._direction_repository.add(item.direction)
 
-            # С‚РµРїРµСЂСЊ direction РіР°СЂР°РЅС‚РёСЂРѕРІР°РЅРЅРѕ СЃСѓС‰РµСЃС‚РІСѓРµС‚
             item.direction_id = direction.id
 
-            # 2пёЏвѓЈ РџСЂРѕРІРµСЂСЏРµРј salary
             existing_salary = await self._salary_repository.get_by_city_and_direction(
                 city.id,
                 direction.id

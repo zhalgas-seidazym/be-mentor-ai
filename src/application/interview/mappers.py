@@ -62,6 +62,7 @@ def interview_question_orm_to_dto(
         id=row.id,
         session_id=row.session_id,
         question_id=row.question_id,
+        question_text=row.question_text,
         question=question_dto,
         is_followup=row.is_followup,
         main_question_id=row.main_question_id,
@@ -85,6 +86,9 @@ def interview_question_dto_to_orm(
 
     if dto.question_id is not None:
         row.question_id = dto.question_id
+
+    if dto.question_text is not None:
+        row.question_text = dto.question_text
 
     if dto.is_followup is not None:
         row.is_followup = dto.is_followup

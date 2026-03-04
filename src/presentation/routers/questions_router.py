@@ -39,27 +39,6 @@ async def get_questions_by_skill_id(
     )
 
 @router.get(
-    "/{question_id}",
-    status_code=s.HTTP_200_OK,
-    response_model=QuestionDTO,
-    response_model_exclude_none=True,
-    responses={
-        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
-        s.HTTP_404_NOT_FOUND: RESPONSE_404,
-    },
-)
-async def get_question_by_id(
-    controller: Annotated[IQuestionController, Depends(get_question_controller)],
-    question_id: int,
-    user: UserDTO = Depends(get_access_user),
-    populate_skill: bool = Query(False),
-):
-    return await controller.get_by_id(
-        question_id=question_id,
-        populate_skill=populate_skill,
-    )
-
-@router.get(
     "/user-answers",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[UserQuestionDTO],
@@ -83,4 +62,26 @@ async def get_user_answers(
         skill_id=skill_id,
         question_id=question_id,
         populate_question=populate_question,
+    )
+
+
+@router.get(
+    "/{question_id}",
+    status_code=s.HTTP_200_OK,
+    response_model=QuestionDTO,
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    },
+)
+async def get_question_by_id(
+    controller: Annotated[IQuestionController, Depends(get_question_controller)],
+    question_id: int,
+    user: UserDTO = Depends(get_access_user),
+    populate_skill: bool = Query(False),
+):
+    return await controller.get_by_id(
+        question_id=question_id,
+        populate_skill=populate_skill,
     )

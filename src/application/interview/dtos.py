@@ -22,6 +22,7 @@ class InterviewQuestionDTO:
     id: Optional[int] = None
     session_id: Optional[int] = None
     question_id: Optional[int] = None
+    question_text: Optional[str] = None
     question: Optional[QuestionDTO] = None
     is_followup: Optional[bool] = None
     main_question_id: Optional[int] = None

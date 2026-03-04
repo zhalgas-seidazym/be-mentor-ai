@@ -51,7 +51,7 @@ class SkillController(ISkillController):
             raise HTTPException(status_code=s.HTTP_409_CONFLICT, detail=f"Skill {name} already exists")
 
         async with self._uow:
-            skill = await self._skill_repository.add(name)
+            skill = await self._skill_repository.add(SkillDTO(name=name))
 
         await self._skill_search_service.index(skill_id=skill.id, name=name)
 

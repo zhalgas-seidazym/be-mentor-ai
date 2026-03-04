@@ -68,3 +68,20 @@ class IOpenAIService(Protocol):
         temperature: float = 0.3,
     ) -> List[QuestionDTO]:
         ...
+
+    async def transcribe_audio(
+        self,
+        filename: str,
+        data: bytes,
+        content_type: Optional[str] = None,
+    ) -> str:
+        ...
+
+    async def evaluate_answer(
+        self,
+        question: str,
+        answer: str,
+        model: ChatGPTModel,
+        temperature: float = 0.2,
+    ) -> dict:
+        ...

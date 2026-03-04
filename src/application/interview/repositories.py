@@ -13,6 +13,7 @@ from src.application.interview.mappers import (
     interview_question_orm_to_dto,
 )
 from src.application.interview.models import InterviewSession, InterviewQuestion
+from src.domain.value_objects import InterviewStatus
 
 
 class InterviewSessionRepository(IInterviewSessionRepository):
@@ -44,6 +45,15 @@ class InterviewSessionRepository(IInterviewSessionRepository):
         await self._session.flush()
         await self._session.refresh(row)
         return interview_session_orm_to_dto(row)
+
+    async def get_active_by_user(self, user_id: int) -> Optional[InterviewSessionDTO]:
+        query = select(InterviewSession).where(
+            InterviewSession.user_id == user_id,
+            InterviewSession.status == InterviewStatus.ACTIVE,
+        ).limit(1)
+        result = await self._session.execute(query)
+        row = result.scalar_one_or_none()
+        return interview_session_orm_to_dto(row) if row else None
 
 
 class InterviewQuestionRepository(IInterviewQuestionRepository):
@@ -84,7 +94,6 @@ class InterviewQuestionRepository(IInterviewQuestionRepository):
         return [interview_question_orm_to_dto(r) for r in rows]
 
     async def get_current_main(self, session_id: int, index: int) -> Optional[InterviewQuestionDTO]:
-        # We store main questions in creation order; use id ordering as stable sequence
         query = select(InterviewQuestion).where(
             InterviewQuestion.session_id == session_id,
             InterviewQuestion.is_followup.is_(False),

@@ -216,6 +216,7 @@ async def refresh_token(
     responses={
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
         s.HTTP_404_NOT_FOUND: RESPONSE_404,
+        s.HTTP_409_CONFLICT: RESPONSE_409
     }
 )
 async def create_profile(

@@ -1,4 +1,4 @@
-from typing import Dict
+﻿from typing import Dict
 
 from fastapi import HTTPException, status as s
 
@@ -163,10 +163,15 @@ class UserController(IUserController):
         direction_id: int,
         skill_ids: list[int],
     ) -> UserDTO:
+        # Check that user exists and not yet onboarded
         user = await self._user_repository.get_by_id(user_id)
         if not user:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
 
+        if user.is_onboarding_completed:
+            raise HTTPException(status_code=s.HTTP_409_CONFLICT, detail="User already onboarding")
+
+        # Validate city and direction references
         city = await self._city_repository.get_by_id(city_id)
         if not city:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"City {city_id} not found")
@@ -175,6 +180,7 @@ class UserController(IUserController):
         if not direction:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Direction {direction_id} not found")
 
+        # Load selected skills and prepare list for AI
         skill_name_list = []
         unique_skill_ids = list(dict.fromkeys(skill_ids))
         for skill_id in unique_skill_ids:
@@ -184,13 +190,18 @@ class UserController(IUserController):
             if skill.name:
                 skill_name_list.append(skill.name)
 
+        # Ask AI for additional theoretical skills
         ai_skills = await self._openai_service.get_direction_theoretical_skills(
             direction_name=direction.name or "",
             skills=skill_name_list,
             model=ChatGPTModel.GPT_4_1,
         )
 
+        skills_list = []
+        modules_list = []
+
         async with self._uow:
+            # Update user profile fields in DB
             user_update = UserDTO(
                 name=name,
                 city_id=city_id,
@@ -198,7 +209,10 @@ class UserController(IUserController):
                 is_onboarding_completed=True,
             )
             user = await self._user_repository.update(user_id=user_id, dto=user_update)
+            if user is None:
+                raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
 
+            # Attach selected skills to the user
             for skill_id in unique_skill_ids:
                 await self._user_skill_repository.add(
                     UserSkillDTO(
@@ -206,11 +220,20 @@ class UserController(IUserController):
                         skill_id=skill_id,
                     )
                 )
+                skills_list.append(
+                    UserSkillDTO(
+                        user_id=user_id,
+                        skill_id=skill_id,
+                        to_learn=False,
+                    )
+                )
 
+            # Attach AI skills as modules (to_learn)
             added_skill_ids = set(unique_skill_ids)
             added_skill_names = {name.strip().lower() for name in skill_name_list}
 
             for ai_skill in ai_skills:
+                # Skip invalid AI entries
                 if not ai_skill.skill or not ai_skill.skill.name:
                     continue
 
@@ -218,9 +241,11 @@ class UserController(IUserController):
                 if not skill_name:
                     continue
 
+                # Avoid duplicates by name
                 if skill_name.lower() in added_skill_names:
                     continue
 
+                # Find or create skill record
                 existing_skill = await self._skill_repository.get_by_name(skill_name)
                 if existing_skill and existing_skill.name and existing_skill.name.lower() == skill_name.lower():
                     skill_id = existing_skill.id
@@ -232,9 +257,11 @@ class UserController(IUserController):
                     skill_id = created_skill.id if created_skill else None
                     canonical_name = created_skill.name if created_skill else skill_name
 
+                # Skip if skill wasn't created or already attached
                 if not skill_id or skill_id in added_skill_ids:
                     continue
 
+                # Link AI skill to user as module
                 await self._user_skill_repository.add(
                     UserSkillDTO(
                         user_id=user_id,
@@ -243,10 +270,20 @@ class UserController(IUserController):
                         match_percentage=ai_skill.match_percentage,
                     )
                 )
+                modules_list.append(
+                    UserSkillDTO(
+                        user_id=user_id,
+                        skill_id=skill_id,
+                        to_learn=True,
+                        match_percentage=ai_skill.match_percentage,
+                    )
+                )
 
+                # Track added skill names/ids
                 added_skill_ids.add(skill_id)
                 added_skill_names.add(skill_name.lower())
 
+                # Seed questions for new skill if none exist
                 existing_questions = await self._question_repository.get(
                     pagination=PaginationDTO[QuestionDTO](per_page=1),
                     skill_id=skill_id,
@@ -260,6 +297,13 @@ class UserController(IUserController):
                         q.skill_id = skill_id
                         await self._question_repository.add(q)
 
+        # Prepare response DTO without extra DB roundtrip
+        user.name = name
+        user.city_id = city_id
+        user.direction_id = direction_id
+        user.is_onboarding_completed = True
+        user.skills = skills_list
+        user.modules = modules_list
         return user
 
     async def get_profile(

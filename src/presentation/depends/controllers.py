@@ -97,11 +97,14 @@ async def get_question_controller(
         user_question_repository=user_question_repository,
     )
 
+@inject
 async def get_interview_controller(
         interview_session_repository: IInterviewSessionRepository = Depends(get_interview_session_repository),
         interview_question_repository: IInterviewQuestionRepository = Depends(get_interview_question_repository),
         question_repository: IQuestionRepository = Depends(get_question_repository),
         user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        user_question_repository: IUserQuestionRepository = Depends(get_user_question_repository),
+        openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
         uow: IUoW = Depends(get_uow),
 ) -> IInterviewController:
     return InterviewController(
@@ -109,6 +112,8 @@ async def get_interview_controller(
         interview_question_repository=interview_question_repository,
         question_repository=question_repository,
         user_skill_repository=user_skill_repository,
+        user_question_repository=user_question_repository,
+        openai_service=openai_service,
         uow=uow,
     )
 

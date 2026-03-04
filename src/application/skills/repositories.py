@@ -26,7 +26,7 @@ class SkillRepository(ISkillRepository):
 
     async def _fetch_one(self, query) -> Optional[SkillDTO]:
         result = await self._session.execute(query)
-        row = result.scalar_one_or_none()
+        row = result.scalars().first()
         return skill_orm_to_dto(row) if row else None
 
     async def get_by_id(self, skill_id: int) -> Optional[SkillDTO]:
@@ -35,7 +35,7 @@ class SkillRepository(ISkillRepository):
 
     async def get_by_name(self, name: str) -> Optional[SkillDTO]:
         query = self._base_query().where(
-            Skill.name.ilike(f"%{name}%")
+            func.lower(Skill.name) == func.lower(name)
         )
         return await self._fetch_one(query)
 

@@ -380,3 +380,97 @@ class OpenAIService:
             logger.exception("Unexpected AI parsing error")
             return []
 
+    async def transcribe_audio(
+            self,
+            filename: str,
+            data: bytes,
+            content_type: str | None = None,
+    ) -> str:
+        try:
+            import io
+            file_obj = io.BytesIO(data)
+            file_obj.name = filename
+            response = await self._client.audio.transcriptions.create(
+                model="whisper-1",
+                file=file_obj,
+            )
+            text = getattr(response, "text", None)
+            return text.strip() if isinstance(text, str) else ""
+        except Exception:
+            logger.exception("Audio transcription error")
+            return ""
+
+    async def evaluate_answer(
+            self,
+            question: str,
+            answer: str,
+            model: ChatGPTModel,
+            temperature: float = 0.2,
+    ) -> dict:
+        if not 0 <= temperature <= 2:
+            raise ValueError("temperature must be between 0 and 2")
+
+        prompt = f"""
+        You are a senior technical interviewer.
+
+        Evaluate the candidate's answer to the question.
+
+        Question: {question}
+        Answer: {answer}
+
+        REQUIREMENTS:
+        1. Decide if the answer is satisfactory or unsatisfactory.
+        2. Provide brief feedback (1-3 sentences).
+        3. If the answer lacks detail, ask ONE follow-up question.
+        4. Return ONLY valid JSON:
+
+        {{
+          "status": "satisfactory|unsatisfactory",
+          "feedback": "string",
+          "followup_question": "string|null"
+        }}
+        """
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=model.value,
+                temperature=temperature,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            content = response.choices[0].message.content if response.choices else None
+            if not content:
+                logger.error("Empty response from AI")
+                return {}
+
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if not json_match:
+                logger.error(f"No JSON found in response: {content}")
+                return {}
+
+            clean_json = json_match.group()
+            parsed = json.loads(clean_json)
+
+            status = parsed.get("status")
+            feedback = parsed.get("feedback")
+            followup_question = parsed.get("followup_question")
+
+            if status not in ("satisfactory", "unsatisfactory"):
+                return {}
+
+            if not isinstance(feedback, str):
+                return {}
+
+            if followup_question is not None and not isinstance(followup_question, str):
+                followup_question = None
+
+            return {
+                "status": status,
+                "feedback": feedback.strip(),
+                "followup_question": followup_question.strip() if isinstance(followup_question, str) else None,
+            }
+
+        except Exception:
+            logger.exception("Unexpected AI parsing error")
+            return {}
+

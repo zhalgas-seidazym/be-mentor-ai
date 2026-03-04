@@ -1,5 +1,5 @@
 ﻿from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from src.application.interview.dtos import InterviewSessionDTO, InterviewQuestionDTO
 
@@ -13,6 +13,9 @@ class IInterviewSessionRepository(ABC):
 
     @abstractmethod
     async def update(self, session_id: int, dto: InterviewSessionDTO) -> Optional[InterviewSessionDTO]: ...
+
+    @abstractmethod
+    async def get_active_by_user(self, user_id: int) -> Optional[InterviewSessionDTO]: ...
 
 
 class IInterviewQuestionRepository(ABC):
@@ -37,4 +40,10 @@ class IInterviewQuestionRepository(ABC):
 
 class IInterviewController(ABC):
     @abstractmethod
-    async def start(self, user_id: int) -> dict: ...
+    async def start(self, user_id: int) -> Dict[str, Any]: ...
+
+    @abstractmethod
+    async def answer(self, session_id: int, interview_question_id: int, audio: bytes, filename: str, user_id: int, content_type: Optional[str] = None) -> Dict[str, Any]: ...
+
+    @abstractmethod
+    async def get_session(self, session_id: int, user_id: int) -> Dict[str, Any]: ...
