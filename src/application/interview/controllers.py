@@ -293,3 +293,16 @@ class InterviewController(IInterviewController):
             "current_main_index": session.current_main_index,
             "total_main_questions": session.total_main_questions,
         }
+
+    async def get_active_session(self, user_id: int) -> Dict[str, Any]:
+        # Fetch active interview for user
+        session = await self._interview_session_repository.get_active_by_user(user_id)
+        if session is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Active interview session not found")
+
+        return {
+            "session_id": session.id,
+            "status": session.status,
+            "current_main_index": session.current_main_index,
+            "total_main_questions": session.total_main_questions,
+        }

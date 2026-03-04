@@ -4,7 +4,7 @@ from fastapi import APIRouter, status as s, Depends, UploadFile, File, Form
 
 from src.application.interview.interfaces import IInterviewController
 from src.application.users.dtos import UserDTO
-from src.domain.responses import RESPONSE_400, RESPONSE_401, RESPONSE_409
+from src.domain.responses import RESPONSE_400, RESPONSE_401, RESPONSE_404, RESPONSE_409
 from src.presentation.depends.controllers import get_interview_controller
 from src.presentation.depends.security import get_access_user
 
@@ -116,6 +116,33 @@ async def answer_interview_question(
         user_id=user.id,
         content_type=audio.content_type,
     )
+
+@router.get(
+    "/active",
+    status_code=s.HTTP_200_OK,
+    responses={
+        s.HTTP_200_OK: {
+            "description": "Active interview session",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "session_id": 12,
+                        "status": "active",
+                        "current_main_index": 3,
+                        "total_main_questions": 10
+                    }
+                }
+            }
+        },
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+    },
+)
+async def get_active_interview_session(
+    controller: Annotated[IInterviewController, Depends(get_interview_controller)],
+    user: UserDTO = Depends(get_access_user),
+):
+    return await controller.get_active_session(user_id=user.id)
 
 @router.get(
     "/{session_id}",

@@ -47,3 +47,6 @@ class IInterviewController(ABC):
 
     @abstractmethod
     async def get_session(self, session_id: int, user_id: int) -> Dict[str, Any]: ...
+
+    @abstractmethod
+    async def get_active_session(self, user_id: int) -> Dict[str, Any]: ...
