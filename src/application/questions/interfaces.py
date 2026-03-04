@@ -83,3 +83,13 @@ class IQuestionController(ABC):
         pagination: Optional[PaginationDTO[QuestionDTO]] = None,
         populate_skill: bool = False,
     ) -> PaginationDTO[QuestionDTO]: ...
+
+    @abstractmethod
+    async def get_user_answers(
+        self,
+        user_id: int,
+        pagination: Optional[PaginationDTO[UserQuestionDTO]] = None,
+        skill_id: Optional[int] = None,
+        question_id: Optional[int] = None,
+        populate_question: bool = False,
+    ) -> PaginationDTO[UserQuestionDTO]: ...

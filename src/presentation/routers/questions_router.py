@@ -1,13 +1,13 @@
-﻿from typing import Annotated
+﻿from typing import Annotated, Optional
 
 from fastapi import APIRouter, status as s, Depends, Query
 
-from src.application.questions.dtos import QuestionDTO
+from src.application.questions.dtos import QuestionDTO, UserQuestionDTO
 from src.application.questions.interfaces import IQuestionController
 from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
 from src.domain.base_schema import PaginationSchema
-from src.domain.responses import RESPONSE_401, RESPONSE_404
+from src.domain.responses import RESPONSE_400, RESPONSE_401, RESPONSE_404
 from src.presentation.depends.controllers import get_question_controller
 from src.presentation.depends.security import get_access_user
 
@@ -57,4 +57,30 @@ async def get_question_by_id(
     return await controller.get_by_id(
         question_id=question_id,
         populate_skill=populate_skill,
+    )
+
+@router.get(
+    "/user-answers",
+    status_code=s.HTTP_200_OK,
+    response_model=PaginationDTO[UserQuestionDTO],
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+    },
+)
+async def get_user_answers(
+    controller: Annotated[IQuestionController, Depends(get_question_controller)],
+    user: UserDTO = Depends(get_access_user),
+    skill_id: Optional[int] = Query(None),
+    question_id: Optional[int] = Query(None),
+    populate_question: bool = Query(False),
+    pagination: PaginationSchema = Depends(PaginationSchema.as_query()),
+):
+    return await controller.get_user_answers(
+        user_id=user.id,
+        pagination=PaginationDTO[UserQuestionDTO](**pagination.dict()),
+        skill_id=skill_id,
+        question_id=question_id,
+        populate_question=populate_question,
     )
