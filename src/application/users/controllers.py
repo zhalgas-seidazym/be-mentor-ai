@@ -7,6 +7,8 @@ from src.application.directions.interfaces import IDirectionRepository
 from src.application.locations.interfaces import ICityRepository
 from src.application.skills.dtos import SkillDTO, UserSkillDTO
 from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository
+from src.application.questions.dtos import QuestionDTO
+from src.application.questions.interfaces import IQuestionRepository
 from src.application.users.interfaces import (
     IUserController,
     IUserRepository,
@@ -14,6 +16,7 @@ from src.application.users.interfaces import (
     IHashService,
 )
 from src.domain.interfaces import IUoW, IJWTService, IOpenAIService
+from src.domain.base_dto import PaginationDTO
 from src.domain.value_objects import TokenType, ChatGPTModel
 
 
@@ -24,6 +27,7 @@ class UserController(IUserController):
             user_repository: IUserRepository,
             user_skill_repository: IUserSkillRepository,
             skill_repository: ISkillRepository,
+            question_repository: IQuestionRepository,
             direction_repository: IDirectionRepository,
             city_repository: ICityRepository,
             openai_service: IOpenAIService,
@@ -35,6 +39,7 @@ class UserController(IUserController):
         self._user_repository = user_repository
         self._user_skill_repository = user_skill_repository
         self._skill_repository = skill_repository
+        self._question_repository = question_repository
         self._direction_repository = direction_repository
         self._city_repository = city_repository
         self._openai_service = openai_service
@@ -219,11 +224,13 @@ class UserController(IUserController):
                 existing_skill = await self._skill_repository.get_by_name(skill_name)
                 if existing_skill and existing_skill.name and existing_skill.name.lower() == skill_name.lower():
                     skill_id = existing_skill.id
+                    canonical_name = existing_skill.name
                 else:
                     created_skill = await self._skill_repository.add(
                         SkillDTO(name=skill_name)
                     )
                     skill_id = created_skill.id if created_skill else None
+                    canonical_name = created_skill.name if created_skill else skill_name
 
                 if not skill_id or skill_id in added_skill_ids:
                     continue
@@ -239,6 +246,19 @@ class UserController(IUserController):
 
                 added_skill_ids.add(skill_id)
                 added_skill_names.add(skill_name.lower())
+
+                existing_questions = await self._question_repository.get(
+                    pagination=PaginationDTO[QuestionDTO](per_page=1),
+                    skill_id=skill_id,
+                )
+                if existing_questions.total == 0:
+                    ai_questions = await self._openai_service.get_skill_theoretical_questions(
+                        skill_name=canonical_name,
+                        model=ChatGPTModel.GPT_4_1,
+                    )
+                    for q in ai_questions:
+                        q.skill_id = skill_id
+                        await self._question_repository.add(q)
 
         return user
 

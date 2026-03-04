@@ -11,6 +11,7 @@ from src.application.directions.interfaces import (
 from src.application.locations.controllers import LocationController
 from src.application.modules.controllers import ModuleController
 from src.application.modules.interfaces import IModuleController
+from src.application.questions.interfaces import IQuestionRepository
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
 from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService, IUserSkillRepository
@@ -31,6 +32,7 @@ async def get_user_controller(
         user_repository: IUserRepository = Depends(get_user_repository),
         user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
         skill_repository: ISkillRepository = Depends(get_skill_repository),
+        question_repository: IQuestionRepository = Depends(get_question_repository),
         direction_repository: IDirectionRepository = Depends(get_direction_repository),
         city_repository: ICityRepository = Depends(get_city_repository),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
@@ -43,6 +45,7 @@ async def get_user_controller(
         user_repository=user_repository,
         user_skill_repository=user_skill_repository,
         skill_repository=skill_repository,
+        question_repository=question_repository,
         direction_repository=direction_repository,
         city_repository=city_repository,
         openai_service=openai_service,
