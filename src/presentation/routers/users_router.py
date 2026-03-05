@@ -9,7 +9,7 @@ from src.domain.base_schema import PasswordSchema
 from src.domain.responses import *
 from src.presentation.depends.controllers import get_user_controller
 from src.presentation.depends.security import get_reset_user, get_refresh_user, get_access_user
-from src.presentation.schemas.users_schema import UserRegisterSchema, UserProfileCreateSchema
+from src.presentation.schemas.users_schema import UserRegisterSchema, UserProfileCreateSchema, UserProfileUpdateSchema
 
 router = APIRouter(
     prefix="/user",
@@ -254,4 +254,29 @@ async def get_profile(
         populate_city=populate_city,
         populate_direction=populate_direction,
         populate_skills=populate_skills,
+    )
+
+@router.patch(
+    '/profile',
+    status_code=s.HTTP_200_OK,
+    response_model=UserDTO,
+    response_model_exclude={"password"},
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+        s.HTTP_408_REQUEST_TIMEOUT: RESPONSE_408,
+    }
+)
+async def update_profile(
+        body: UserProfileUpdateSchema,
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        user: UserDTO = Depends(get_access_user),
+):
+    return await controller.update_profile(
+        user_id=user.id,
+        name=body.name,
+        city_id=body.city_id,
+        password=body.password,
+        new_password=body.new_password,
     )

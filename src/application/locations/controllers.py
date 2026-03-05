@@ -34,7 +34,7 @@ class LocationController(ILocationController):
             country_id: Optional[int],
             populate_country: bool = False,
     ) -> PaginationDTO[CityDTO]:
-        res = await self._city_repository.get(name=q, pagination=pagination, populate_country=populate_country)
+        res = await self._city_repository.get(name=q, pagination=pagination, populate_country=populate_country, country_id=country_id)
         return res
 
     async def get_city_by_id(self, city_id: int, populate_country: bool = False) -> Optional[CityDTO]:

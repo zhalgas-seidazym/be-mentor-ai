@@ -14,7 +14,7 @@ from src.presentation.depends.security import get_access_user
 
 router = APIRouter(
     prefix="/modules",
-    tags=["module"],
+    tags=["modules"],
 )
 
 @router.get(

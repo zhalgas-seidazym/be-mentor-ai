@@ -55,12 +55,9 @@ class BaseSchema(BaseModel):
         )
         return _as_query
 
-class PasswordSchema(BaseModel):
-    password: str
-
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, value: str) -> str:
+class _PasswordValidationMixin(BaseModel):
+    @staticmethod
+    def _validate_password_value(value: str) -> str:
         pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$"
 
         if not re.match(pattern, value):
@@ -70,6 +67,22 @@ class PasswordSchema(BaseModel):
             )
 
         return value
+
+class PasswordSchema(_PasswordValidationMixin):
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        return cls._validate_password_value(value)
+
+class NewPasswordSchema(_PasswordValidationMixin):
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, value: str) -> str:
+        return cls._validate_password_value(value)
 
 class SortSchema(BaseSchema):
     sort_by: str

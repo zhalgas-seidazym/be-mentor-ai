@@ -174,8 +174,6 @@ class DirectionSalaryController(IDirectionSalaryController):
         salary = await self._salary_repository.get_by_city_and_direction(
             city_id=city_id,
             direction_id=direction_id,
-            populate_city=True,
-            populate_direction=True,
         )
         if salary is not None:
             return salary
@@ -215,8 +213,6 @@ class DirectionSalaryController(IDirectionSalaryController):
         salary = await self._salary_repository.get_by_city_and_direction(
             city_id=city_id,
             direction_id=direction_id,
-            populate_city=True,
-            populate_direction=True,
         )
         if salary is None:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Salary not found")

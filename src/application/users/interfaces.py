@@ -75,6 +75,16 @@ class IUserController(ABC):
         populate_skills: bool = False,
     ) -> UserDTO: ...
 
+    @abstractmethod
+    async def update_profile(
+        self,
+        user_id: int,
+        name: Optional[str] = None,
+        city_id: Optional[int] = None,
+        password: Optional[str] = None,
+        new_password: Optional[str] = None,
+    ) -> UserDTO: ...
+
 class IEmailOtpService(Protocol):
     async def send_otp(self, email: str, ttl: Optional[int] = None) -> None: ...
 
