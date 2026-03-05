@@ -45,7 +45,7 @@ class IUserQuestionRepository(ABC):
         self,
         pagination: Optional[PaginationDTO[UserQuestionDTO]] = None,
         user_id: Optional[int] = None,
-        skill_id: Optional[int] = None,
+        module_id: Optional[int] = None,
         question_id: Optional[int] = None,
         populate_question: bool = False,
     ) -> PaginationDTO[UserQuestionDTO]: ...
@@ -89,7 +89,7 @@ class IQuestionController(ABC):
         self,
         user_id: int,
         pagination: Optional[PaginationDTO[UserQuestionDTO]] = None,
-        skill_id: Optional[int] = None,
+        module_id: Optional[int] = None,
         question_id: Optional[int] = None,
         populate_question: bool = False,
     ) -> PaginationDTO[UserQuestionDTO]: ...

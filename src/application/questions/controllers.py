@@ -49,11 +49,11 @@ class QuestionController(IQuestionController):
         self,
         user_id: int,
         pagination: Optional[PaginationDTO[UserQuestionDTO]] = None,
-        skill_id: Optional[int] = None,
+        module_id: Optional[int] = None,
         question_id: Optional[int] = None,
         populate_question: bool = False,
     ) -> PaginationDTO[UserQuestionDTO]:
-        if question_id is None and skill_id is None:
+        if question_id is None and module_id is None:
             raise HTTPException(
                 status_code=s.HTTP_400_BAD_REQUEST,
                 detail="skill_id is required when question_id is not provided",
@@ -62,7 +62,7 @@ class QuestionController(IQuestionController):
         return await self._user_question_repository.get(
             pagination=pagination,
             user_id=user_id,
-            skill_id=skill_id if question_id is None else None,
+            module_id=module_id if question_id is None else None,
             question_id=question_id,
             populate_question=populate_question,
         )

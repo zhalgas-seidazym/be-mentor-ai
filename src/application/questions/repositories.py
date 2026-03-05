@@ -154,7 +154,7 @@ class UserQuestionRepository(IUserQuestionRepository):
         self,
         pagination: Optional[PaginationDTO[UserQuestionDTO]] = None,
         user_id: Optional[int] = None,
-        skill_id: Optional[int] = None,
+        module_id: Optional[int] = None,
         question_id: Optional[int] = None,
         populate_question: bool = False,
     ) -> PaginationDTO[UserQuestionDTO]:
@@ -167,8 +167,8 @@ class UserQuestionRepository(IUserQuestionRepository):
         if question_id is not None:
             base_query = base_query.where(UserQuestion.question_id == question_id)
 
-        if skill_id is not None:
-            base_query = base_query.join(Question).where(Question.skill_id == skill_id)
+        if module_id is not None:
+            base_query = base_query.join(Question).where(Question.skill_id == module_id)
 
         count_query = select(func.count()).select_from(base_query.subquery())
         count_result = await self._session.execute(count_query)

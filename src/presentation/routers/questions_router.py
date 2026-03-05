@@ -53,7 +53,7 @@ async def get_questions_by_skill_id(
 async def get_user_answers(
     controller: Annotated[IQuestionController, Depends(get_question_controller)],
     user: UserDTO = Depends(get_access_user),
-    skill_id: Optional[int] = Query(None),
+    module_id: Optional[int] = Query(None),
     question_id: Optional[int] = Query(None),
     populate_question: bool = Query(False),
     pagination: PaginationSchema = Depends(PaginationSchema.as_query()),
@@ -61,7 +61,7 @@ async def get_user_answers(
     return await controller.get_user_answers(
         user_id=user.id,
         pagination=PaginationDTO[UserQuestionDTO](**pagination.dict()),
-        skill_id=skill_id,
+        module_id=module_id,
         question_id=question_id,
         populate_question=populate_question,
     )
