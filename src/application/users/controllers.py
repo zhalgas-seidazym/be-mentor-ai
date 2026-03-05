@@ -361,6 +361,18 @@ class UserController(IUserController):
 
         return user
 
+    async def get_profile_streak(self, user_id: int) -> Dict[str, Optional[object]]:
+        user = await self._user_repository.get_by_id(user_id=user_id)
+        if not user:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
+
+        return {
+            "current_streak": user.current_streak,
+            "longest_streak": user.longest_streak,
+            "last_interview_day": user.last_interview_day,
+            "timezone": user.timezone,
+        }
+
     async def update_profile(
         self,
         user_id: int,

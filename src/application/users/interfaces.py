@@ -77,6 +77,9 @@ class IUserController(ABC):
     ) -> UserDTO: ...
 
     @abstractmethod
+    async def get_profile_streak(self, user_id: int) -> Dict[str, Any]: ...
+
+    @abstractmethod
     async def update_profile(
         self,
         user_id: int,

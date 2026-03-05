@@ -257,6 +257,33 @@ async def get_profile(
         populate_skills=populate_skills,
     )
 
+@router.get(
+    '/profile/streak',
+    status_code=s.HTTP_200_OK,
+    responses={
+        s.HTTP_200_OK: {
+            "description": "User streak",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "current_streak": 5,
+                        "longest_streak": 12,
+                        "last_interview_day": "2026-03-05",
+                        "timezone": "Asia/Almaty",
+                    }
+                }
+            }
+        },
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    }
+)
+async def get_profile_streak(
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        user: UserDTO = Depends(get_access_user),
+):
+    return await controller.get_profile_streak(user_id=user.id)
+
 @router.patch(
     '/profile',
     status_code=s.HTTP_200_OK,
