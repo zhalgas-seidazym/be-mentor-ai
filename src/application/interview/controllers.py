@@ -1,5 +1,7 @@
 ﻿import random
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, status as s
 
@@ -8,6 +10,8 @@ from src.application.interview.interfaces import IInterviewController, IIntervie
 from src.application.questions.dtos import QuestionDTO, UserQuestionDTO
 from src.application.questions.interfaces import IQuestionRepository, IUserQuestionRepository
 from src.application.skills.interfaces import IUserSkillRepository
+from src.application.users.dtos import UserDTO
+from src.application.users.interfaces import IUserRepository
 from src.domain.interfaces import IUoW, IOpenAIService
 from src.domain.value_objects import InterviewStatus, ChatGPTModel, QuestionStatus
 
@@ -20,6 +24,7 @@ class InterviewController(IInterviewController):
         question_repository: IQuestionRepository,
         user_skill_repository: IUserSkillRepository,
         user_question_repository: IUserQuestionRepository,
+        user_repository: IUserRepository,
         openai_service: IOpenAIService,
         uow: IUoW,
     ):
@@ -28,6 +33,7 @@ class InterviewController(IInterviewController):
         self._question_repository = question_repository
         self._user_skill_repository = user_skill_repository
         self._user_question_repository = user_question_repository
+        self._user_repository = user_repository
         self._openai_service = openai_service
         self._uow = uow
 
@@ -252,8 +258,48 @@ class InterviewController(IInterviewController):
                     session_id,
                     InterviewSessionDTO(status=InterviewStatus.COMPLETED, current_main_index=next_index),
                 )
+
+                user = await self._user_repository.get_by_id(user_id)
+                if user is None:
+                    raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
+
+                tz_name = user.timezone or "UTC"
+                try:
+                    tzinfo = ZoneInfo(tz_name)
+                except Exception:
+                    tzinfo = ZoneInfo("UTC")
+
+                today = datetime.now(tzinfo).date()
+                last_day = user.last_interview_day
+                done_today = last_day == today
+
+                current_streak = user.current_streak or 0
+                longest_streak = user.longest_streak or 0
+                effective_last_day = last_day
+
+                if not done_today:
+                    if last_day == today - timedelta(days=1):
+                        current_streak += 1
+                    else:
+                        current_streak = 1
+
+                    longest_streak = max(longest_streak, current_streak)
+                    effective_last_day = today
+
+                    await self._user_repository.update(
+                        user_id,
+                        UserDTO(
+                            current_streak=current_streak,
+                            longest_streak=longest_streak,
+                            last_interview_day=today,
+                        ),
+                    )
+
                 return {
                     "status": "completed",
+                    "current_streak": current_streak,
+                    "longest_streak": longest_streak,
+                    "last_interview_day": effective_last_day,
                 }
 
             # Persist updated main index

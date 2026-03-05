@@ -230,6 +230,7 @@ async def create_profile(
         city_id=body.city_id,
         direction_id=body.direction_id,
         skill_ids=body.skill_ids,
+        timezone=body.timezone,
     )
 
 @router.get(

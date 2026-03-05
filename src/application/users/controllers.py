@@ -165,6 +165,7 @@ class UserController(IUserController):
         city_id: int,
         direction_id: int,
         skill_ids: list[int],
+        timezone: str,
     ) -> UserDTO:
         # Check that user exists and not yet onboarded
         user = await self._user_repository.get_by_id(user_id)
@@ -215,6 +216,7 @@ class UserController(IUserController):
                 city_id=city_id,
                 direction_id=direction_id,
                 is_onboarding_completed=True,
+                timezone=timezone,
             )
             user = await self._user_repository.update(user_id=user_id, dto=user_update)
             if user is None:

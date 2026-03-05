@@ -1,4 +1,5 @@
 from typing import Optional
+from zoneinfo import ZoneInfo
 from pydantic import BaseModel, EmailStr, field_validator
 
 from src.domain.base_schema import PasswordSchema, NewPasswordSchema
@@ -13,6 +14,16 @@ class UserProfileCreateSchema(BaseModel):
     city_id: int
     direction_id: int
     skill_ids: list[int]
+    timezone: str
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except Exception as exc:
+            raise ValueError("Invalid timezone") from exc
+        return value
 
 class UserProfileUpdateSchema(NewPasswordSchema, PasswordSchema):
     name: Optional[str] = None

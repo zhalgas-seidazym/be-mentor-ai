@@ -88,7 +88,10 @@ async def start_interview(
                         "completed": {
                             "summary": "Interview completed",
                             "value": {
-                                "status": "completed"
+                                "status": "completed",
+                                "current_streak": 5,
+                                "longest_streak": 12,
+                                "last_interview_day": "2026-03-05"
                             }
                         }
                     }

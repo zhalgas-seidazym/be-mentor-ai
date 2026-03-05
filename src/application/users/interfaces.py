@@ -64,6 +64,7 @@ class IUserController(ABC):
         city_id: int,
         direction_id: int,
         skill_ids: list[int],
+        timezone: str,
     ) -> UserDTO: ...
 
     @abstractmethod
