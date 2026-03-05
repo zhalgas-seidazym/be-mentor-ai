@@ -546,3 +546,74 @@ class OpenAIService:
             logger.exception("Unexpected AI parsing error")
             return {}
 
+    async def get_learning_recommendations(
+            self,
+            skill_name: str,
+            model: ChatGPTModel,
+            temperature: float = 0.2,
+    ) -> List[str]:
+        if not 0 <= temperature <= 2:
+            raise ValueError("temperature must be between 0 and 2")
+
+        prompt = f"""
+        You are a learning curator.
+
+        Using web search, find 1-5 free, high-quality, currently accessible
+        learning resources for the given skill.
+
+        Skill: {skill_name}
+
+        REQUIREMENTS:
+        1. Return only direct URLs to resources (articles, docs, courses, videos).
+        2. Resources must be free and currently accessible.
+        3. Prefer official docs and reputable sources.
+        4. Return ONLY valid JSON in the format below.
+
+        {{
+          "sources": ["https://example.com/resource"]
+        }}
+        """
+
+        try:
+            response = await self._client.responses.create(
+                model=model.value,
+                tools=[{"type": "web_search"}],
+                temperature=temperature,
+                input=prompt,
+            )
+
+            content = response.output_text
+            if not content:
+                logger.error("Empty response from AI")
+                return []
+
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if not json_match:
+                logger.error(f"No JSON found in response: {content}")
+                return []
+
+            clean_json = json_match.group()
+            parsed = json.loads(clean_json)
+
+            sources = parsed.get("sources", [])
+            if not isinstance(sources, list):
+                return []
+
+            clean_sources: List[str] = []
+            for item in sources:
+                if not isinstance(item, str):
+                    continue
+                url = item.strip()
+                if not url:
+                    continue
+                if not (url.startswith("http://") or url.startswith("https://")):
+                    continue
+                if url not in clean_sources:
+                    clean_sources.append(url)
+
+            return clean_sources[:5]
+
+        except Exception:
+            logger.exception("Unexpected AI parsing error")
+            return []
+

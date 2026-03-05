@@ -95,3 +95,11 @@ class IOpenAIService(Protocol):
         temperature: float = 0.3,
     ) -> dict:
         ...
+
+    async def get_learning_recommendations(
+        self,
+        skill_name: str,
+        model: ChatGPTModel,
+        temperature: float = 0.2,
+    ) -> List[str]:
+        ...
