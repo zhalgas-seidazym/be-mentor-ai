@@ -14,6 +14,7 @@ from src.presentation.routers import (
     modules_router as mr,
     questions_router as qr,
     interview_router as ir,
+    learning_recommendations_router as lrr,
 )
 
 
@@ -40,3 +41,4 @@ app.include_router(dr.router)
 app.include_router(mr.router)
 app.include_router(qr.router)
 app.include_router(ir.router)
+app.include_router(lrr.router)

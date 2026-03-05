@@ -10,3 +10,8 @@ class ILearningRecommendationRepository(ABC):
 
     @abstractmethod
     async def get_by_skill_id(self, skill_id: int) -> List[LearningRecommendationDTO]: ...
+
+
+class ILearningRecommendationController(ABC):
+    @abstractmethod
+    async def get_recommendations(self, user_id: int, skill_id: int) -> dict: ...

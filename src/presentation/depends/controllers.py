@@ -27,6 +27,8 @@ from src.application.users.interfaces import (
 )
 from src.application.interview.controllers import InterviewController
 from src.application.interview.interfaces import IInterviewController, IInterviewSessionRepository, IInterviewQuestionRepository
+from src.application.learning_recommendations.controllers import LearningRecommendationController
+from src.application.learning_recommendations.interfaces import ILearningRecommendationController, ILearningRecommendationRepository
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
 from src.presentation.depends.session import get_uow
@@ -117,6 +119,24 @@ async def get_interview_controller(
         user_skill_repository=user_skill_repository,
         user_question_repository=user_question_repository,
         user_repository=user_repository,
+        openai_service=openai_service,
+        uow=uow,
+    )
+
+@inject
+async def get_learning_recommendation_controller(
+        learning_recommendation_repository: ILearningRecommendationRepository = Depends(
+            get_learning_recommendation_repository
+        ),
+        skill_repository: ISkillRepository = Depends(get_skill_repository),
+        user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
+        uow: IUoW = Depends(get_uow),
+) -> ILearningRecommendationController:
+    return LearningRecommendationController(
+        learning_recommendation_repository=learning_recommendation_repository,
+        skill_repository=skill_repository,
+        user_skill_repository=user_skill_repository,
         openai_service=openai_service,
         uow=uow,
     )

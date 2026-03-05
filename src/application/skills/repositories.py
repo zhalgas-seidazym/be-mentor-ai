@@ -184,6 +184,20 @@ class UserSkillRepository(IUserSkillRepository):
             items=items,
         )
 
+    async def get_by_user_and_skill(
+        self,
+        user_id: int,
+        skill_id: int,
+        populate_skill: bool = False,
+    ) -> Optional[UserSkillDTO]:
+        query = self._base_query(populate_skill).where(
+            UserSkill.user_id == user_id,
+            UserSkill.skill_id == skill_id,
+        )
+        result = await self._session.execute(query)
+        row = result.scalar_one_or_none()
+        return user_skill_orm_to_dto(row, populate_skill=populate_skill) if row else None
+
     async def add(self, dto: UserSkillDTO) -> Optional[UserSkillDTO]:
         row = user_skill_dto_to_orm(dto)
 

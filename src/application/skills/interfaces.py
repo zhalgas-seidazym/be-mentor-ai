@@ -62,6 +62,14 @@ class IUserSkillRepository(ABC):
     ) -> PaginationDTO[UserSkillDTO]: ...
 
     @abstractmethod
+    async def get_by_user_and_skill(
+        self,
+        user_id: int,
+        skill_id: int,
+        populate_skill: bool = False,
+    ) -> Optional[UserSkillDTO]: ...
+
+    @abstractmethod
     async def add(self, dto: UserSkillDTO) -> Optional[UserSkillDTO]: ...
 
     @abstractmethod
