@@ -13,6 +13,8 @@ from src.application.questions.interfaces import IQuestionRepository, IUserQuest
 from src.application.questions.repositories import QuestionRepository, UserQuestionRepository
 from src.application.interview.interfaces import IInterviewSessionRepository, IInterviewQuestionRepository
 from src.application.interview.repositories import InterviewSessionRepository, InterviewQuestionRepository
+from src.application.learning_recommendations.interfaces import ILearningRecommendationRepository
+from src.application.learning_recommendations.repositories import LearningRecommendationRepository
 from src.presentation.depends.session import get_session
 
 
@@ -70,3 +72,8 @@ async def get_salary_repository(
         session: AsyncSession = Depends(get_session),
 ) -> ISalaryRepository:
     return SalaryRepository(session)
+
+async def get_learning_recommendation_repository(
+        session: AsyncSession = Depends(get_session),
+) -> ILearningRecommendationRepository:
+    return LearningRecommendationRepository(session)
