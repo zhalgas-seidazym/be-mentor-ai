@@ -18,13 +18,11 @@ from src.application.modules.interfaces import IModuleStatisticsService
 from src.application.locations.interfaces import ICountryRepository, ICityRepository, ILocationController
 from src.application.skills.controllers import SkillController
 from src.application.skills.interfaces import ISkillRepository, ISkillController, ISkillSearchService, IUserSkillRepository
-from src.application.users.controllers import UserController
-from src.application.users.interfaces import (
-    IUserRepository,
-    IEmailOtpService,
-    IUserController,
-    IHashService,
-)
+from src.application.users.auth.controllers import AuthController
+from src.application.users.auth.interfaces import IAuthController, IEmailOtpService, IHashService, IOAuthService
+from src.application.users.interfaces import IUserRepository
+from src.application.users.user.controllers import UserController
+from src.application.users.user.interfaces import IUserController
 from src.application.interview.controllers import InterviewController
 from src.application.interview.interfaces import IInterviewController, IInterviewSessionRepository, IInterviewQuestionRepository
 from src.application.learning_recommendations.controllers import LearningRecommendationController
@@ -33,6 +31,24 @@ from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
 from src.presentation.depends.session import get_uow
 
+
+@inject
+async def get_auth_controller(
+        user_repository: IUserRepository = Depends(get_user_repository),
+        email_otp_service: IEmailOtpService = Depends(Provide[Container.email_otp_service]),
+        oauth_service: IOAuthService = Depends(Provide[Container.oauth_service]),
+        jwt_service: IJWTService = Depends(Provide[Container.jwt_service]),
+        hash_service: IHashService = Depends(Provide[Container.hash_service]),
+        uow: IUoW = Depends(get_uow)
+) -> IAuthController:
+    return AuthController(
+        user_repository=user_repository,
+        email_otp_service=email_otp_service,
+        oauth_service=oauth_service,
+        jwt_service=jwt_service,
+        hash_service=hash_service,
+        uow=uow
+    )
 
 @inject
 async def get_user_controller(
@@ -44,8 +60,6 @@ async def get_user_controller(
         city_repository: ICityRepository = Depends(get_city_repository),
         salary_repository: ISalaryRepository = Depends(get_salary_repository),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
-        email_otp_service: IEmailOtpService = Depends(Provide[Container.email_otp_service]),
-        jwt_service: IJWTService = Depends(Provide[Container.jwt_service]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
         uow: IUoW = Depends(get_uow)
 ) -> IUserController:
@@ -58,8 +72,6 @@ async def get_user_controller(
         salary_repository=salary_repository,
         city_repository=city_repository,
         openai_service=openai_service,
-        email_otp_service=email_otp_service,
-        jwt_service=jwt_service,
         hash_service=hash_service,
         uow=uow
     )

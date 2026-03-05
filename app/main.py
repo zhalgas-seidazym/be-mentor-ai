@@ -8,6 +8,7 @@ from src.application.directions.interfaces import IDirectionSearchService
 from .container import Container
 from src.presentation.routers import (
     users_router as ur,
+    auth_router as ar,
     skills_router as sr,
     locations_router as lr,
     directions_router as dr,
@@ -35,6 +36,7 @@ async def startup():
     await direction_search.create_index_if_not_exists()
 
 app.include_router(ur.router)
+app.include_router(ar.router)
 app.include_router(sr.router)
 app.include_router(lr.router)
 app.include_router(dr.router)

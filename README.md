@@ -63,4 +63,4 @@ docker-compose exec api alembic upgrade head
 ## Notes
 
 - Web search is used in OpenAI integration for learning recommendations.
-- API endpoints are secured with JWT (see `/user/login` and `/user/verify-otp/register` flows).
+- API endpoints are secured with JWT (see `/auth/login` and `/auth/verify-otp/register` flows).

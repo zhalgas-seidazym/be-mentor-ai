@@ -39,6 +39,15 @@ class Settings(BaseSettings):
     # ---- OTP ----
     OTP_TTL: int
 
+    # ---- OAuth ----
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
+    APPLE_CLIENT_ID: str
+    APPLE_CLIENT_SECRET: str
+    APPLE_REDIRECT_URI: str
+    OAUTH_STATE_TTL: int
+
     # ---- OpenAI ----
     OPENAI_API_KEY: str
 

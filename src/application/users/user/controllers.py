@@ -1,4 +1,4 @@
-﻿from typing import Dict, Optional
+from typing import Dict, Optional
 
 from fastapi import HTTPException, status as s
 
@@ -10,15 +10,12 @@ from src.application.skills.interfaces import ISkillRepository, IUserSkillReposi
 from src.application.questions.dtos import QuestionDTO
 from src.application.questions.interfaces import IQuestionRepository
 from src.application.directions.dtos import SalaryDTO
-from src.application.users.interfaces import (
-    IUserController,
-    IUserRepository,
-    IEmailOtpService,
-    IHashService,
-)
-from src.domain.interfaces import IUoW, IJWTService, IOpenAIService
+from src.application.users.interfaces import IUserRepository
+from src.application.users.user.interfaces import IUserController
+from src.application.users.auth.interfaces import IHashService
+from src.domain.interfaces import IUoW, IOpenAIService
 from src.domain.base_dto import PaginationDTO
-from src.domain.value_objects import TokenType, ChatGPTModel
+from src.domain.value_objects import ChatGPTModel
 
 
 class UserController(IUserController):
@@ -33,9 +30,7 @@ class UserController(IUserController):
             salary_repository: ISalaryRepository,
             city_repository: ICityRepository,
             openai_service: IOpenAIService,
-            email_otp_service: IEmailOtpService,
             hash_service: IHashService,
-            jwt_service: IJWTService,
     ):
         self._uow = uow
         self._user_repository = user_repository
@@ -46,120 +41,7 @@ class UserController(IUserController):
         self._salary_repository = salary_repository
         self._city_repository = city_repository
         self._openai_service = openai_service
-        self._email_otp_service = email_otp_service
         self._hash_service = hash_service
-        self._jwt_service = jwt_service
-
-    async def send_otp(self, email: str) -> Dict:
-        await self._email_otp_service.send_otp(email)
-        return {
-            "detail": "OTP code sent successfully",
-        }
-
-    async def verify_otp_and_register(self, user_data: UserDTO, code: str) -> Dict:
-        user_check = await self._user_repository.get_by_email(user_data.email)
-        if user_check:
-            raise HTTPException(status_code=s.HTTP_409_CONFLICT,
-                                detail=f"User with {user_data.email} already exists")
-
-        await self._email_otp_service.verify_otp(user_data.email, code)
-
-        user_data.password = self._hash_service.hash_password(user_data.password)
-
-        async with self._uow:
-            created = await self._user_repository.add(
-                user_data
-            )
-
-        payload = {
-            "user_id": created.id,
-            'type': TokenType.ACCESS.value
-        }
-        access_token = self._jwt_service.encode_token(data=payload)
-        payload['type'] = TokenType.REFRESH.value
-        refresh_token = self._jwt_service.encode_token(data=payload, is_access_token=False)
-
-        return {
-            "detail": "OTP verified and user created successfully",
-            "user_id": created.id,
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-        }
-
-    async def login(self, user_data: UserDTO) -> Dict:
-        user = await self._user_repository.get_by_email(user_data.email)
-
-        if user is None:
-            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"User with {user_data.email} not found")
-
-        if user.password is None or len(user.password) == 0:
-            raise HTTPException(status_code=s.HTTP_403_FORBIDDEN, detail=f"User has no password, login through OAuth or reset password")
-
-        password_check = self._hash_service.verify_password(user_data.password, user.password)
-
-        if not password_check:
-            raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail=f"Incorrect credentials")
-
-        payload = {
-            "user_id": user.id,
-            'type': TokenType.ACCESS.value
-        }
-        access_token = self._jwt_service.encode_token(data=payload)
-        payload['type'] = TokenType.REFRESH.value
-        refresh_token = self._jwt_service.encode_token(data=payload, is_access_token=False)
-
-        return {
-            "detail": "Logged in successfully",
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-        }
-
-    async def verify_otp_and_password_token(self, user_data: UserDTO, code: str) -> Dict:
-        user = await self._user_repository.get_by_email(user_data.email)
-
-        if not user:
-            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"User with {user_data.email} not found")
-
-        await self._email_otp_service.verify_otp(user_data.email, code)
-
-        payload = {
-            "user_id": user.id,
-            'type': TokenType.PASSWORD_RESET.value
-        }
-
-        password_reset_token = self._jwt_service.encode_token(data=payload, expires_delta=5)
-
-        return {
-            "detail": "OTP verified successfully",
-            "password_reset_token": password_reset_token
-        }
-
-    async def reset_password(self, user_data: UserDTO) -> Dict:
-        user_data.password = self._hash_service.hash_password(user_data.password)
-
-        async with self._uow:
-            await self._user_repository.update(user_id=user_data.id, dto=user_data)
-
-        return {
-            "detail": "Password updated successfully",
-        }
-
-    async def refresh_token(self, user_data: UserDTO) -> Dict:
-        payload = {
-            "user_id": user_data.id,
-            'type': TokenType.ACCESS.value
-        }
-
-        access_token = self._jwt_service.encode_token(data=payload)
-        payload['type'] = TokenType.REFRESH.value
-        refresh_token = self._jwt_service.encode_token(data=payload, is_access_token=False)
-
-
-        return {
-            "detail": "Refreshed token successfully",
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-        }
 
     async def create_profile(
         self,

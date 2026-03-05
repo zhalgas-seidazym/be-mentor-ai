@@ -3,7 +3,7 @@
 from app.settings import Settings
 from src.application.skills.services import SkillSearchService
 from src.application.directions.services import DirectionSearchService, DirectionStatisticsService
-from src.application.users.services import EmailOtpService, HashService
+from src.application.users.auth.services import EmailOtpService, HashService, OAuthService
 from src.infrastructure.dbs.postgre import create_engine, create_session_factory
 from src.infrastructure.dbs.redis import RedisConnection
 from src.infrastructure.integrations.email_service import EmailService
@@ -57,6 +57,18 @@ class Container(containers.DeclarativeContainer):
         email_service=email_service,
         redis=redis,
         otp_ttl=settings.OTP_TTL,
+    )
+
+    oauth_service = providers.Factory(
+        OAuthService,
+        redis=redis,
+        google_client_id=settings.GOOGLE_CLIENT_ID,
+        google_client_secret=settings.GOOGLE_CLIENT_SECRET,
+        google_redirect_uri=settings.GOOGLE_REDIRECT_URI,
+        apple_client_id=settings.APPLE_CLIENT_ID,
+        apple_client_secret=settings.APPLE_CLIENT_SECRET,
+        apple_redirect_uri=settings.APPLE_REDIRECT_URI,
+        state_ttl=settings.OAUTH_STATE_TTL,
     )
 
     elasticsearch_client = providers.Singleton(
