@@ -18,6 +18,7 @@ router = APIRouter(
 
 @router.post(
     '',
+    summary="Create direction",
     status_code=s.HTTP_201_CREATED,
     response_model=DirectionDTO,
     response_model_exclude_none=True,
@@ -36,6 +37,7 @@ async def create_direction(
 
 @router.post(
     '/ai-directions',
+    summary="Get AI recommended directions",
     status_code=s.HTTP_200_OK,
     response_model=List[SalaryDTO],
     response_model_exclude_none=True,
@@ -54,6 +56,7 @@ async def get_ai_directions(
 
 @router.get(
     '/autocomplete',
+    summary="Autocomplete directions",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[DirectionDTO],
     responses={
@@ -69,6 +72,7 @@ async def direction_autocomplete(
 
 @router.get(
     '/salary/my',
+    summary="Get my salary estimate",
     status_code=s.HTTP_200_OK,
     response_model=SalaryDTO,
     response_model_exclude_none=True,
@@ -87,6 +91,7 @@ async def get_my_salary(
 
 @router.get(
     '/{direction_id}',
+    summary="Get direction by id",
     status_code=s.HTTP_200_OK,
     response_model=DirectionDTO,
     response_model_exclude_none=True,
@@ -102,6 +107,7 @@ async def get_direction_by_id(
 
 @router.get(
     '/my/statistics',
+    summary="Get my progress statistics",
     status_code=s.HTTP_200_OK,
     response_model=ProgressStatisticsDTO,
     response_model_exclude_none=True,

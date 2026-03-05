@@ -17,6 +17,7 @@ router = APIRouter(
 
 @router.get(
     '/country',
+    summary="Search countries",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[CountryDTO],
 )
@@ -31,6 +32,7 @@ async def get_countries_by_name(
 
 @router.get(
     '/country/{country_id}',
+    summary="Get country by id",
     status_code=s.HTTP_200_OK,
     response_model=CountryDTO,
     responses={
@@ -45,6 +47,7 @@ async def get_country_by_id(
 
 @router.get(
     '/city',
+    summary="Search cities",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[CityDTO],
 )
@@ -64,6 +67,7 @@ async def get_city_by_name_and_country_id(
 
 @router.get(
     '/city/{city_id}',
+    summary="Get city by id",
     status_code=s.HTTP_200_OK,
     response_model=CityDTO,
     responses={

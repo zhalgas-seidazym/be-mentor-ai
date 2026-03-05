@@ -16,6 +16,7 @@ router = APIRouter(
 
 @router.get(
     "/ai/{skill_id}",
+    summary="Get learning recommendations",
     status_code=s.HTTP_200_OK,
     response_model=Dict[str, Any],
     responses={

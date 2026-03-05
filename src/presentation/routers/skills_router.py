@@ -20,6 +20,7 @@ router = APIRouter(
 
 @router.post(
     '',
+    summary="Create skill",
     status_code=s.HTTP_201_CREATED,
     response_model=SkillDTO,
     responses={
@@ -36,6 +37,7 @@ async def create_skill(
 
 @router.get(
     '/autocomplete',
+    summary="Autocomplete skills",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[SkillDTO],
     responses={
@@ -51,6 +53,7 @@ async def skill_autocomplete(
 
 @router.get(
     '/my',
+    summary="Get my skills",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[UserSkillDTO],
     response_model_exclude_none=True,
@@ -72,6 +75,7 @@ async def get_my_skills(
 
 @router.get(
     '/{skill_id}',
+    summary="Get skill by id",
     status_code=s.HTTP_200_OK,
     response_model=SkillDTO,
     responses={

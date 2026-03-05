@@ -19,6 +19,7 @@ router = APIRouter(
 
 @router.get(
     "/my",
+    summary="Get my modules",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[UserSkillDTO],
     response_model_exclude_none=True,
@@ -40,6 +41,7 @@ async def get_my_modules(
 
 @router.get(
     "/{module_id}/statistics",
+    summary="Get module statistics",
     status_code=s.HTTP_200_OK,
     response_model=ProgressStatisticsDTO,
     response_model_exclude_none=True,

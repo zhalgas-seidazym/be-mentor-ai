@@ -18,6 +18,7 @@ router = APIRouter(
 
 @router.post(
     "/send-otp",
+    summary="Send OTP to email",
     status_code=s.HTTP_200_OK,
     responses={
         s.HTTP_200_OK: {
@@ -50,6 +51,7 @@ async def send_otp(
 
 @router.post(
     "/verify-otp/register",
+    summary="Verify OTP and register",
     status_code=s.HTTP_201_CREATED,
     responses={
         s.HTTP_201_CREATED: {
@@ -97,6 +99,7 @@ async def verify_otp_and_register(
 
 @router.post(
     '/login',
+    summary="Login with credentials",
     status_code=s.HTTP_200_OK,
     responses={
         s.HTTP_200_OK: {
@@ -133,6 +136,7 @@ async def login(
 
 @router.post(
     '/verify-otp/password-reset-token',
+    summary="Verify OTP and issue reset token",
     status_code=s.HTTP_200_OK,
     responses={
         s.HTTP_200_OK: {
@@ -159,6 +163,7 @@ async def verify_otp_password_reset(
 
 @router.post(
     '/reset-password',
+    summary="Reset password using reset token",
     status_code=s.HTTP_200_OK,
     responses={
         s.HTTP_200_OK: {
@@ -185,6 +190,7 @@ async def reset_password(
 
 @router.post(
     '/refresh-token',
+    summary="Refresh access token",
     status_code=s.HTTP_200_OK,
     responses={
         s.HTTP_200_OK: {
@@ -210,6 +216,7 @@ async def refresh_token(
 
 @router.post(
     '/profile',
+    summary="Create user profile",
     status_code=s.HTTP_201_CREATED,
     response_model=UserDTO,
     response_model_exclude={"password"},
@@ -235,6 +242,7 @@ async def create_profile(
 
 @router.get(
     '/profile',
+    summary="Get current user profile",
     status_code=s.HTTP_200_OK,
     response_model=UserDTO,
     response_model_exclude={"password"},
@@ -259,6 +267,7 @@ async def get_profile(
 
 @router.get(
     '/profile/streak',
+    summary="Get user interview streak",
     status_code=s.HTTP_200_OK,
     responses={
         s.HTTP_200_OK: {
@@ -286,6 +295,7 @@ async def get_profile_streak(
 
 @router.patch(
     '/profile',
+    summary="Update user profile",
     status_code=s.HTTP_200_OK,
     response_model=UserDTO,
     response_model_exclude={"password"},
@@ -308,3 +318,28 @@ async def update_profile(
         password=body.password,
         new_password=body.new_password,
     )
+
+@router.delete(
+    '',
+    summary="Delete current user",
+    status_code=s.HTTP_200_OK,
+    responses={
+        s.HTTP_200_OK: {
+            "description": "User deleted",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "User deleted successfully"
+                    }
+                }
+            }
+        },
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    }
+)
+async def delete_user(
+        controller: Annotated[IUserController, Depends(get_user_controller)],
+        user: UserDTO = Depends(get_access_user),
+):
+    return await controller.delete_user(user_id=user.id)

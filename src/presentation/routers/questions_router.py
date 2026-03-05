@@ -18,6 +18,7 @@ router = APIRouter(
 
 @router.get(
     "/module/{skill_id}",
+    summary="Get questions by skill",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[QuestionDTO],
     response_model_exclude_none=True,
@@ -40,6 +41,7 @@ async def get_questions_by_skill_id(
 
 @router.get(
     "/user-answers",
+    summary="Get my answers",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[UserQuestionDTO],
     response_model_exclude_none=True,
@@ -67,6 +69,7 @@ async def get_user_answers(
 
 @router.get(
     "/{question_id}",
+    summary="Get question by id",
     status_code=s.HTTP_200_OK,
     response_model=QuestionDTO,
     response_model_exclude_none=True,

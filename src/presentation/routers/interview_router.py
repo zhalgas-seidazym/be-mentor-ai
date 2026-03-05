@@ -15,8 +15,8 @@ router = APIRouter(
 
 @router.post(
     "/start",
+    summary="Start interview",
     status_code=s.HTTP_201_CREATED,
-    response_model=Dict[str, Any],
     responses={
         s.HTTP_201_CREATED: {
             "description": "Interview started",
@@ -49,8 +49,8 @@ async def start_interview(
 
 @router.post(
     "/{session_id}/answer",
+    summary="Answer interview question",
     status_code=s.HTTP_200_OK,
-    response_model=Dict[str, Any],
     responses={
         s.HTTP_200_OK: {
             "description": "Answer processed",
@@ -122,6 +122,7 @@ async def answer_interview_question(
 
 @router.get(
     "/active",
+    summary="Get active interview session",
     status_code=s.HTTP_200_OK,
     responses={
         s.HTTP_200_OK: {
@@ -150,8 +151,8 @@ async def get_active_interview_session(
 
 @router.get(
     "/{session_id}",
+    summary="Get interview session",
     status_code=s.HTTP_200_OK,
-    response_model=Dict[str, Any],
     responses={
         s.HTTP_200_OK: {
             "description": "Interview session status",

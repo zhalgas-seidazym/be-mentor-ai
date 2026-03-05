@@ -89,6 +89,9 @@ class IUserController(ABC):
         new_password: Optional[str] = None,
     ) -> UserDTO: ...
 
+    @abstractmethod
+    async def delete_user(self, user_id: int) -> Dict: ...
+
 class IEmailOtpService(Protocol):
     async def send_otp(self, email: str, ttl: Optional[int] = None) -> None: ...
 

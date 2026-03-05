@@ -458,3 +458,14 @@ class UserController(IUserController):
                 )
 
         return updated
+
+    async def delete_user(self, user_id: int) -> Dict:
+        async with self._uow:
+            deleted = await self._user_repository.delete(user_id=user_id)
+
+        if not deleted:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
+
+        return {
+            "detail": "User deleted successfully",
+        }
