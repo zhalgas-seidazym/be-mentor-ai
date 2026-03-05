@@ -10,22 +10,24 @@ Backend service for MentorAI platform (FastAPI + PostgreSQL + Redis + Elasticsea
 cp .env.example .env
 ```
 
-2. Start services (example with Docker Compose):
+2. First start (build images):
+
+```bash
+docker-compose up --build -d
+```
+
+3. Run migrations inside Docker:
+
+```bash
+docker-compose exec api alembic upgrade head
+```
+
+4. Server runs inside Docker (no separate `uvicorn` needed).
+
+Next starts:
 
 ```bash
 docker-compose up -d
-```
-
-3. Run migrations:
-
-```bash
-alembic upgrade head
-```
-
-4. Start the app:
-
-```bash
-uvicorn app.main:app --reload
 ```
 
 ## Environment
@@ -39,23 +41,23 @@ FastAPI provides interactive docs:
 - Swagger UI: `/docs`
 - OpenAPI JSON: `/openapi.json`
 
-If you want static documentation in the repo, create `docs/api.md` and link it here. A common approach:
+Static documentation in the repo:
 
-- `README.md`: quick usage + how to run.
-- `docs/api.md`: endpoints, request/response examples, auth flow.
+- `docs/openapi.json`: exported OpenAPI schema (if you maintain it manually).
+- `docs/user-flows.md`: user flow overview.
 
 ## Migrations
 
 Create new migrations:
 
 ```bash
-alembic revision -m "message"
+docker-compose exec api alembic revision -m "message"
 ```
 
 Apply:
 
 ```bash
-alembic upgrade head
+docker-compose exec api alembic upgrade head
 ```
 
 ## Notes
