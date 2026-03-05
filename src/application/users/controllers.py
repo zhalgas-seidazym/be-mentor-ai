@@ -92,6 +92,9 @@ class UserController(IUserController):
         if user is None:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"User with {user_data.email} not found")
 
+        if user.password is None or len(user.password) == 0:
+            raise HTTPException(status_code=s.HTTP_403_FORBIDDEN, detail=f"User has no password, login through OAuth or reset password")
+
         password_check = self._hash_service.verify_password(user_data.password, user.password)
 
         if not password_check:

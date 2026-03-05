@@ -124,7 +124,8 @@ async def verify_otp_and_register(
                     }
                 }
             }
-        }
+        },
+        s.HTTP_403_FORBIDDEN: RESPONSE_403,
     }
 )
 async def login(

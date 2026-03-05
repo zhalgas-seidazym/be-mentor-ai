@@ -21,9 +21,9 @@ class User(Base, TimestampMixin):
         index=True,
         nullable=False,
     )
-    password: Mapped[str] = mapped_column(
+    password: Mapped[Optional[str]] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
     )
 
     # --- Profile ---
