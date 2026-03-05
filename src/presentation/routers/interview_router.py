@@ -129,7 +129,8 @@ async def answer_interview_question(
                         "session_id": 12,
                         "status": "active",
                         "current_main_index": 3,
-                        "total_main_questions": 10
+                        "total_main_questions": 10,
+                        "current_interview_question_id": 503
                     }
                 }
             }
@@ -157,7 +158,8 @@ async def get_active_interview_session(
                         "session_id": 12,
                         "status": "active",
                         "current_main_index": 3,
-                        "total_main_questions": 10
+                        "total_main_questions": 10,
+                        "current_interview_question_id": 503
                     }
                 }
             }

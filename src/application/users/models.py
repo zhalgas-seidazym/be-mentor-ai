@@ -1,6 +1,8 @@
 from typing import Optional
 
-from sqlalchemy import Integer, String, Boolean, ForeignKey
+from datetime import date
+
+from sqlalchemy import Integer, String, Boolean, ForeignKey, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.domain.base_model import TimestampMixin
@@ -35,6 +37,30 @@ class User(Base, TimestampMixin):
         Boolean,
         nullable=False,
         default=False,
+    )
+
+    # --- Streak ---
+    current_streak: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    longest_streak: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    last_interview_day: Mapped[Optional[date]] = mapped_column(
+        Date,
+        nullable=True,
+    )
+
+    timezone: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default="UTC",
     )
 
     # --- Career ---

@@ -65,6 +65,10 @@ def user_orm_to_dto(
         city_id=row.city_id,
         direction_id=row.direction_id,
         is_onboarding_completed=row.is_onboarding_completed,
+        current_streak=row.current_streak,
+        longest_streak=row.longest_streak,
+        last_interview_day=row.last_interview_day,
+        timezone=row.timezone,
         skills=skills_dto,
         modules=modules_dto,
         direction=direction_dto,
@@ -90,6 +94,10 @@ def user_dto_to_orm(
         "city_id": dto.city_id,
         "direction_id": dto.direction_id,
         "is_onboarding_completed": dto.is_onboarding_completed,
+        "current_streak": dto.current_streak,
+        "longest_streak": dto.longest_streak,
+        "last_interview_day": dto.last_interview_day,
+        "timezone": dto.timezone,
     }
 
     for field, value in updates.items():

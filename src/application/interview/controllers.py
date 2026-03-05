@@ -286,12 +286,18 @@ class InterviewController(IInterviewController):
         if session is None or session.user_id != user_id:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Interview session not found")
 
+        current_main = await self._interview_question_repository.get_current_main(
+            session_id=session.id,
+            index=session.current_main_index or 1,
+        )
+
         # Return minimal session state
         return {
             "session_id": session.id,
             "status": session.status,
             "current_main_index": session.current_main_index,
             "total_main_questions": session.total_main_questions,
+            "current_interview_question_id": current_main.id if current_main else None,
         }
 
     async def get_active_session(self, user_id: int) -> Dict[str, Any]:
@@ -300,9 +306,15 @@ class InterviewController(IInterviewController):
         if session is None:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Active interview session not found")
 
+        current_main = await self._interview_question_repository.get_current_main(
+            session_id=session.id,
+            index=session.current_main_index or 1,
+        )
+
         return {
             "session_id": session.id,
             "status": session.status,
             "current_main_index": session.current_main_index,
             "total_main_questions": session.total_main_questions,
+            "current_interview_question_id": current_main.id if current_main else None,
         }
