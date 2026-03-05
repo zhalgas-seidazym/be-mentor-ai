@@ -1,8 +1,11 @@
 from typing import Annotated, Literal
+from urllib.parse import urlencode
 
+from fastapi.responses import RedirectResponse
 from fastapi import APIRouter, status as s, Depends, Body, Query
 from pydantic import EmailStr
 
+from app.settings import Settings
 from src.application.users.dtos import UserDTO
 from src.application.users.auth.interfaces import IAuthController
 from src.domain.base_schema import PasswordSchema
@@ -15,6 +18,7 @@ router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
+settings = Settings()
 
 
 @router.post(
@@ -228,7 +232,7 @@ async def refresh_token(
     status_code=s.HTTP_200_OK,
 )
 async def oauth_start(
-        provider: Literal["google", "apple"],
+        provider: Literal["google"],
         controller: Annotated[IAuthController, Depends(get_auth_controller)],
 ):
     return await controller.oauth_start(provider=provider)
@@ -237,12 +241,20 @@ async def oauth_start(
 @router.get(
     "/oauth/{provider}/callback",
     summary="OAuth callback",
-    status_code=s.HTTP_200_OK,
 )
 async def oauth_callback(
-        provider: Literal["google", "apple"],
+        provider: Literal["google"],
         controller: Annotated[IAuthController, Depends(get_auth_controller)],
         code: str = Query(...),
         state: str = Query(...),
 ):
-    return await controller.oauth_callback(provider=provider, code=code, state=state)
+    auth_result = await controller.oauth_callback(provider=provider, code=code, state=state)
+    query = urlencode(
+        {
+            "detail": auth_result["detail"],
+            "access_token": auth_result["access_token"],
+            "refresh_token": auth_result["refresh_token"],
+        }
+    )
+    separator = "&" if "?" in settings.GOOGLE_DEEP_LINK_URI else "?"
+    return RedirectResponse(url=f"{settings.GOOGLE_DEEP_LINK_URI}{separator}{query}", status_code=s.HTTP_302_FOUND)

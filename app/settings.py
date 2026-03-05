@@ -43,9 +43,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str
-    APPLE_CLIENT_ID: str
-    APPLE_CLIENT_SECRET: str
-    APPLE_REDIRECT_URI: str
+    GOOGLE_DEEP_LINK_URI: str
     OAUTH_STATE_TTL: int
 
     # ---- OpenAI ----

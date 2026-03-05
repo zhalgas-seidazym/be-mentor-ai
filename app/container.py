@@ -65,9 +65,6 @@ class Container(containers.DeclarativeContainer):
         google_client_id=settings.GOOGLE_CLIENT_ID,
         google_client_secret=settings.GOOGLE_CLIENT_SECRET,
         google_redirect_uri=settings.GOOGLE_REDIRECT_URI,
-        apple_client_id=settings.APPLE_CLIENT_ID,
-        apple_client_secret=settings.APPLE_CLIENT_SECRET,
-        apple_redirect_uri=settings.APPLE_REDIRECT_URI,
         state_ttl=settings.OAUTH_STATE_TTL,
     )
 

@@ -50,6 +50,7 @@ async def create_direction(
 async def get_ai_directions(
         controller: Annotated[IDirectionSalaryController, Depends(get_direction_salary_controller)],
         city_id: int = Body(),
+        user: UserDTO = Depends(get_access_user),
         skills: List[str] = Body(None)
 ):
     return await controller.get_ai_directions(skills, city_id)

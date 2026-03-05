@@ -9,7 +9,6 @@ from urllib.parse import urlencode
 import bcrypt
 import httpx
 from fastapi import HTTPException, status as s
-from jose import jwt as jose_jwt
 from redis.asyncio import Redis
 
 from src.domain.interfaces import IEmailService
@@ -74,18 +73,12 @@ class OAuthService:
             google_client_id: str,
             google_client_secret: str,
             google_redirect_uri: str,
-            apple_client_id: str,
-            apple_client_secret: str,
-            apple_redirect_uri: str,
             state_ttl: int = 600,
     ):
         self.redis = redis
         self.google_client_id = google_client_id
         self.google_client_secret = google_client_secret
         self.google_redirect_uri = google_redirect_uri
-        self.apple_client_id = apple_client_id
-        self.apple_client_secret = apple_client_secret
-        self.apple_redirect_uri = apple_redirect_uri
         self.state_ttl = state_ttl
 
     @staticmethod
@@ -99,40 +92,24 @@ class OAuthService:
         state = secrets.token_urlsafe(32)
         verifier, challenge = self._pkce_pair()
 
-        if provider == "google":
-            if not self.google_client_id or not self.google_redirect_uri:
-                raise HTTPException(status_code=s.HTTP_500_INTERNAL_SERVER_ERROR, detail="Google OAuth is not configured")
-
-            params = {
-                "client_id": self.google_client_id,
-                "redirect_uri": self.google_redirect_uri,
-                "response_type": "code",
-                "scope": "openid email profile",
-                "state": state,
-                "code_challenge": challenge,
-                "code_challenge_method": "S256",
-                "access_type": "offline",
-                "prompt": "consent",
-            }
-            auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
-
-        elif provider == "apple":
-            if not self.apple_client_id or not self.apple_redirect_uri:
-                raise HTTPException(status_code=s.HTTP_500_INTERNAL_SERVER_ERROR, detail="Apple OAuth is not configured")
-
-            params = {
-                "client_id": self.apple_client_id,
-                "redirect_uri": self.apple_redirect_uri,
-                "response_type": "code",
-                "response_mode": "query",
-                "scope": "email name",
-                "state": state,
-                "code_challenge": challenge,
-                "code_challenge_method": "S256",
-            }
-            auth_url = f"https://appleid.apple.com/auth/authorize?{urlencode(params)}"
-        else:
+        if provider != "google":
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="Unsupported OAuth provider")
+
+        if not self.google_client_id or not self.google_redirect_uri:
+            raise HTTPException(status_code=s.HTTP_500_INTERNAL_SERVER_ERROR, detail="Google OAuth is not configured")
+
+        params = {
+            "client_id": self.google_client_id,
+            "redirect_uri": self.google_redirect_uri,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "state": state,
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+            "access_type": "offline",
+            "prompt": "consent",
+        }
+        auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
 
         await self.redis.set(f"oauth:state:{provider}:{state}", verifier, ex=self.state_ttl)
         return {
@@ -149,12 +126,13 @@ class OAuthService:
 
         await self.redis.delete(redis_key)
 
-        if provider == "google":
-            email, email_verified = await self._google_email_from_code(code=code, verifier=verifier)
-        elif provider == "apple":
-            email, email_verified = await self._apple_email_from_code(code=code, verifier=verifier)
-        else:
+        if provider != "google":
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="Unsupported OAuth provider")
+
+        email, email_verified = await self._google_email_from_code(
+            code=code,
+            verifier=verifier,
+        )
 
         if not email_verified:
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="OAUTH_EMAIL_NOT_VERIFIED")
@@ -164,7 +142,11 @@ class OAuthService:
             "provider": provider,
         }
 
-    async def _google_email_from_code(self, code: str, verifier: str) -> tuple[str, bool]:
+    async def _google_email_from_code(
+        self,
+        code: str,
+        verifier: str,
+    ) -> tuple[str, bool]:
         token_data = {
             "code": code,
             "client_id": self.google_client_id,
@@ -202,39 +184,3 @@ class OAuthService:
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="OAUTH_PROVIDER_ERROR")
 
         return email, bool(payload.get("email_verified"))
-
-    async def _apple_email_from_code(self, code: str, verifier: str) -> tuple[str, bool]:
-        token_data = {
-            "client_id": self.apple_client_id,
-            "client_secret": self.apple_client_secret,
-            "code": code,
-            "grant_type": "authorization_code",
-            "redirect_uri": self.apple_redirect_uri,
-            "code_verifier": verifier,
-        }
-
-        async with httpx.AsyncClient(timeout=15) as client:
-            token_resp = await client.post(
-                "https://appleid.apple.com/auth/token",
-                data=token_data,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-            )
-            if token_resp.status_code != 200:
-                raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="OAUTH_CODE_INVALID")
-
-            id_token = token_resp.json().get("id_token")
-            if not id_token:
-                raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="OAUTH_PROVIDER_ERROR")
-
-        try:
-            claims = jose_jwt.get_unverified_claims(id_token)
-        except Exception:
-            raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="OAUTH_PROVIDER_ERROR")
-
-        email = claims.get("email")
-        email_verified = str(claims.get("email_verified", "")).lower() == "true"
-
-        if not email:
-            raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="OAUTH_PROVIDER_ERROR")
-
-        return email, email_verified
