@@ -23,14 +23,14 @@ class ModuleStatisticsService(IModuleStatisticsService):
 
         questions_page = await self._question_repository.get(
             pagination=None,
-            skill_id=module_id,
+            module_id=module_id,
         )
         total_questions = questions_page.total or 0
 
         user_questions_page = await self._user_question_repository.get(
             pagination=None,
             user_id=user_id,
-            skill_id=module_id,
+            module_id=module_id,
         )
         user_questions = user_questions_page.items or []
 

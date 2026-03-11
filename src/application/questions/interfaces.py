@@ -13,7 +13,7 @@ class IQuestionRepository(ABC):
     async def get(
         self,
         pagination: Optional[PaginationDTO[QuestionDTO]] = None,
-        skill_id: Optional[int] = None,
+        module_id: Optional[int] = None,
         q: Optional[str] = None,
         populate_skill: bool = False,
     ) -> PaginationDTO[QuestionDTO]: ...

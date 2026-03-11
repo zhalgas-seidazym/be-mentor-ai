@@ -43,15 +43,15 @@ class QuestionRepository(IQuestionRepository):
     async def get(
         self,
         pagination: Optional[PaginationDTO[QuestionDTO]] = None,
-        skill_id: Optional[int] = None,
+        module_id: Optional[int] = None,
         q: Optional[str] = None,
         populate_skill: bool = False,
     ) -> PaginationDTO[QuestionDTO]:
 
         base_query = self._base_query(populate_skill)
 
-        if skill_id is not None:
-            base_query = base_query.where(Question.skill_id == skill_id)
+        if module_id is not None:
+            base_query = base_query.where(Question.skill_id == module_id)
 
         if q:
             base_query = base_query.where(Question.question.ilike(f"%{q}%"))
