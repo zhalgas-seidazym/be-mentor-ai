@@ -77,9 +77,9 @@ class IQuestionController(ABC):
     ) -> Optional[QuestionDTO]: ...
 
     @abstractmethod
-    async def get_by_skill_id(
+    async def get_by_module_id(
         self,
-        skill_id: int,
+        module_id: int,
         pagination: Optional[PaginationDTO[QuestionDTO]] = None,
         populate_skill: bool = False,
     ) -> PaginationDTO[QuestionDTO]: ...

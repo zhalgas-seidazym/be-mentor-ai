@@ -33,15 +33,15 @@ class QuestionController(IQuestionController):
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Question {question_id} not found")
         return res
 
-    async def get_by_skill_id(
+    async def get_by_module_id(
         self,
-        skill_id: int,
+        module_id: int,
         pagination: Optional[PaginationDTO[QuestionDTO]] = None,
         populate_skill: bool = False,
     ) -> PaginationDTO[QuestionDTO]:
         return await self._question_repository.get(
             pagination=pagination,
-            skill_id=skill_id,
+            module_id=module_id,
             populate_skill=populate_skill,
         )
 

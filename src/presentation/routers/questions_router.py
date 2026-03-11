@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 @router.get(
-    "/module/{skill_id}",
+    "/module/{module_id}",
     summary="Get questions by skill",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[QuestionDTO],
@@ -26,15 +26,15 @@ router = APIRouter(
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
     },
 )
-async def get_questions_by_skill_id(
+async def get_questions_by_module_id(
     controller: Annotated[IQuestionController, Depends(get_question_controller)],
-    skill_id: int,
+    module_id: int,
     user: UserDTO = Depends(get_access_user),
     populate_skill: bool = Query(False),
     pagination: PaginationSchema = Depends(PaginationSchema.as_query()),
 ):
-    return await controller.get_by_skill_id(
-        skill_id=skill_id,
+    return await controller.get_by_module_id(
+        module_id=module_id,
         pagination=PaginationDTO[QuestionDTO](**pagination.dict()),
         populate_skill=populate_skill,
     )
