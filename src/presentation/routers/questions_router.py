@@ -18,7 +18,7 @@ router = APIRouter(
 
 @router.get(
     "/module/{module_id}",
-    summary="Get questions by skill",
+    summary="Get questions by module",
     status_code=s.HTTP_200_OK,
     response_model=PaginationDTO[QuestionDTO],
     response_model_exclude_none=True,
