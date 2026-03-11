@@ -230,6 +230,22 @@ async def refresh_token(
     "/oauth/{provider}/start",
     summary="Start OAuth authorization",
     status_code=s.HTTP_200_OK,
+    responses={
+        s.HTTP_200_OK: {
+            "description": "OAuth authorization URL created",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "provider": "google",
+                        "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?...",
+                        "state": "state_token",
+                    }
+                }
+            },
+        },
+        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+        s.HTTP_500_INTERNAL_SERVER_ERROR: RESPONSE_500,
+    },
 )
 async def oauth_start(
         provider: Literal["google"],
@@ -241,6 +257,17 @@ async def oauth_start(
 @router.get(
     "/oauth/{provider}/callback",
     summary="OAuth callback",
+    responses={
+        s.HTTP_302_FOUND: {
+            "description": "Redirect to deep link with OAuth tokens",
+            "headers": {
+                "Location": {
+                    "description": "Deep link with query params: detail, access_token, refresh_token",
+                }
+            },
+        },
+        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+    },
 )
 async def oauth_callback(
         provider: Literal["google"],
