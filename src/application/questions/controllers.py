@@ -56,7 +56,7 @@ class QuestionController(IQuestionController):
         if question_id is None and module_id is None:
             raise HTTPException(
                 status_code=s.HTTP_400_BAD_REQUEST,
-                detail="skill_id is required when question_id is not provided",
+                detail="module_id is required when question_id is not provided",
             )
 
         return await self._user_question_repository.get(

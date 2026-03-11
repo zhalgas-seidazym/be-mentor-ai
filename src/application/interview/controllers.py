@@ -48,19 +48,19 @@ class InterviewController(IInterviewController):
             user_id=user_id,
             to_learn=True,
         )
-        # Extract skill ids, skipping missing ones
-        skills = [m.skill_id for m in (modules.items or []) if m.skill_id is not None]
+        # Extract module ids, skipping missing ones
+        module_ids = [m.skill_id for m in (modules.items or []) if m.skill_id is not None]
 
         # Fail fast if user has no modules
-        if not skills:
+        if not module_ids:
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="No modules to learn")
 
         # Collect questions for each module
         questions: List[QuestionDTO] = []
-        for skill_id in skills:
+        for module_id in module_ids:
             res = await self._question_repository.get(
                 pagination=None,
-                skill_id=skill_id,
+                module_id=module_id,
             )
             # Append only when repository returned items
             if res.items:
@@ -241,6 +241,7 @@ class InterviewController(IInterviewController):
 
                 return {
                     "status": "need_followup",
+                    "user_answer_text": transcript,
                     "feedback": feedback,
                     "followup_question": {
                         "interview_question_id": created_followup.id,
@@ -297,6 +298,7 @@ class InterviewController(IInterviewController):
 
                 return {
                     "status": "completed",
+                    "user_answer_text": transcript,
                     "current_streak": current_streak,
                     "longest_streak": longest_streak,
                     "last_interview_day": effective_last_day,
@@ -316,6 +318,7 @@ class InterviewController(IInterviewController):
         return {
             "status": "final",
             "result": status,
+            "user_answer_text": transcript,
             "feedback": feedback,
             "next_question": {
                 "interview_question_id": next_main.id,

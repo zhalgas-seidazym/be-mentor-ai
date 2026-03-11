@@ -204,10 +204,11 @@ class UserController(IUserController):
                 added_skill_ids.add(skill_id)
                 added_skill_names.add(skill_name.lower())
 
-                # Seed questions for new skill if none exist
+                # Seed questions for new module if none exist
+                module_id = skill_id
                 existing_questions = await self._question_repository.get(
                     pagination=PaginationDTO[QuestionDTO](per_page=1),
-                    skill_id=skill_id,
+                    module_id=module_id,
                 )
                 if existing_questions.total == 0:
                     ai_questions = await self._openai_service.get_skill_theoretical_questions(
@@ -215,7 +216,7 @@ class UserController(IUserController):
                         model=ChatGPTModel.GPT_4_1,
                     )
                     for q in ai_questions:
-                        q.skill_id = skill_id
+                        q.skill_id = module_id
                         await self._question_repository.add(q)
 
         # Prepare response DTO without extra DB roundtrip
