@@ -67,6 +67,19 @@ class IUserQuestionRepository(ABC):
     @abstractmethod
     async def delete(self, user_question_id: int) -> bool: ...
 
+    @abstractmethod
+    async def delete_by_user(
+        self,
+        user_id: int,
+    ) -> int: ...
+
+    @abstractmethod
+    async def delete_by_user_and_module(
+        self,
+        user_id: int,
+        module_id: int,
+    ) -> int: ...
+
 
 class IQuestionController(ABC):
     @abstractmethod

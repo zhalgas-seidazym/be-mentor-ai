@@ -3,15 +3,13 @@ from typing import Dict, Optional
 from fastapi import HTTPException, status as s
 
 from src.application.users.dtos import UserDTO
-from src.application.directions.dtos import SalaryDTO
 from src.application.directions.interfaces import IDirectionRepository, ISalaryRepository
 from src.application.locations.interfaces import ICityRepository
 from src.application.skills.interfaces import ISkillRepository
 from src.application.users.interfaces import IUserRepository
 from src.application.users.user.interfaces import IUserController, IUserService
 from src.application.users.auth.interfaces import IHashService
-from src.domain.interfaces import IUoW, IOpenAIService
-from src.domain.value_objects import ChatGPTModel
+from src.domain.interfaces import IUoW
 
 
 class UserController(IUserController):
@@ -23,7 +21,6 @@ class UserController(IUserController):
             direction_repository: IDirectionRepository,
             salary_repository: ISalaryRepository,
             city_repository: ICityRepository,
-            openai_service: IOpenAIService,
             hash_service: IHashService,
             user_service: IUserService,
     ):
@@ -33,7 +30,6 @@ class UserController(IUserController):
         self._direction_repository = direction_repository
         self._salary_repository = salary_repository
         self._city_repository = city_repository
-        self._openai_service = openai_service
         self._hash_service = hash_service
         self._user_service = user_service
 
@@ -143,6 +139,9 @@ class UserController(IUserController):
         user_id: int,
         name: Optional[str] = None,
         city_id: Optional[int] = None,
+        direction_id: Optional[int] = None,
+        skill_ids: Optional[list[int]] = None,
+        timezone: Optional[str] = None,
         password: Optional[str] = None,
         new_password: Optional[str] = None,
     ) -> UserDTO:
@@ -163,66 +162,43 @@ class UserController(IUserController):
                 raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="Incorrect password")
             hashed_password = self._hash_service.hash_password(new_password)
 
-        city = None
         if city_id is not None:
             city = await self._city_repository.get_by_id(city_id, populate_country=True)
             if not city:
                 raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"City {city_id} not found")
 
-        existing_salary = None
         direction = None
-        ai_salary = None
-
-        if city is not None and user.direction_id is not None:
-            existing_salary = await self._salary_repository.get_by_city_and_direction(
-                city_id=city_id,
-                direction_id=user.direction_id,
-            )
-
-            if existing_salary is None:
-                direction = await self._direction_repository.get_by_id(user.direction_id)
-                if not direction:
-                    raise HTTPException(
-                        status_code=s.HTTP_404_NOT_FOUND,
-                        detail=f"Direction {user.direction_id} not found",
-                    )
-
-                if not city.country or not city.country.name:
-                    raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="City country not found")
-
-                ai_salary = await self._openai_service.get_direction_salary(
-                    country=city.country.name,
-                    city=city.name or "",
-                    direction=direction.name or "",
-                    model=ChatGPTModel.GPT_4_1,
-                )
-                if not ai_salary:
-                    raise HTTPException(
-                        status_code=s.HTTP_408_REQUEST_TIMEOUT,
-                        detail="Failed to generate salary, please try again",
-                    )
-
-        async with self._uow:
-            user_update = UserDTO(
-                name=name,
-                city_id=city_id,
-                password=hashed_password,
-            )
-            updated = await self._user_repository.update(user_id=user_id, dto=user_update)
-            if updated is None:
-                raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
-
-            if ai_salary and city_id is not None and user.direction_id is not None:
-                await self._salary_repository.add(
-                    SalaryDTO(
-                        city_id=city_id,
-                        direction_id=user.direction_id,
-                        amount=ai_salary["amount"],
-                        currency=ai_salary["currency"],
-                    )
+        if direction_id is not None:
+            direction = await self._direction_repository.get_by_id(direction_id)
+            if not direction:
+                raise HTTPException(
+                    status_code=s.HTTP_404_NOT_FOUND,
+                    detail=f"Direction {direction_id} not found",
                 )
 
-        return updated
+        unique_skill_ids: Optional[list[int]] = None
+        skill_name_list: Optional[list[str]] = None
+        if skill_ids is not None:
+            unique_skill_ids = list(dict.fromkeys(skill_ids))
+            skill_name_list = []
+            for skill_id in unique_skill_ids:
+                skill = await self._skill_repository.get_by_id(skill_id)
+                if not skill:
+                    raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Skill {skill_id} not found")
+                if skill.name:
+                    skill_name_list.append(skill.name)
+
+        return await self._user_service.update_profile(
+            user=user,
+            name=name,
+            city_id=city_id,
+            direction_id=direction_id,
+            direction_name=direction.name if direction_id is not None else None,
+            unique_skill_ids=unique_skill_ids,
+            skill_name_list=skill_name_list,
+            timezone=timezone,
+            hashed_password=hashed_password,
+        )
 
     async def delete_user(self, user_id: int) -> Dict:
         async with self._uow:

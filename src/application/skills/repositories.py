@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -251,3 +251,16 @@ class UserSkillRepository(IUserSkillRepository):
 
         await self._session.delete(row)
         return True
+
+    async def delete_by_user_and_to_learn(
+        self,
+        user_id: int,
+        to_learn: bool,
+    ) -> int:
+        result = await self._session.execute(
+            delete(UserSkill).where(
+                UserSkill.user_id == user_id,
+                UserSkill.to_learn == to_learn,
+            )
+        )
+        return int(result.rowcount or 0)

@@ -103,3 +103,12 @@ class IOpenAIService(Protocol):
         temperature: float = 0.2,
     ) -> List[str]:
         ...
+
+    async def check_skill_in_direction(
+        self,
+        direction_name: str,
+        skill_name: str,
+        model: ChatGPTModel,
+        temperature: float = 0.2,
+    ) -> dict:
+        ...

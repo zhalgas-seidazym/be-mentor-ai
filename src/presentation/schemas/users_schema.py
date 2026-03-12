@@ -28,6 +28,9 @@ class UserProfileCreateSchema(BaseModel):
 class UserProfileUpdateSchema(NewPasswordSchema, PasswordSchema):
     name: Optional[str] = None
     city_id: Optional[int] = None
+    direction_id: Optional[int] = None
+    skill_ids: Optional[list[int]] = None
+    timezone: Optional[str] = None
     password: Optional[str] = None
     new_password: Optional[str] = None
 
@@ -44,3 +47,14 @@ class UserProfileUpdateSchema(NewPasswordSchema, PasswordSchema):
         if value is None:
             return value
         return super().validate_new_password(value)
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone_optional(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        try:
+            ZoneInfo(value)
+        except Exception as exc:
+            raise ValueError("Invalid timezone") from exc
+        return value

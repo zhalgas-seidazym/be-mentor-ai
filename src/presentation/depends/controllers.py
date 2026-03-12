@@ -61,6 +61,9 @@ async def get_user_controller(
         direction_repository: IDirectionRepository = Depends(get_direction_repository),
         city_repository: ICityRepository = Depends(get_city_repository),
         salary_repository: ISalaryRepository = Depends(get_salary_repository),
+        user_question_repository: IUserQuestionRepository = Depends(get_user_question_repository),
+        interview_session_repository: IInterviewSessionRepository = Depends(get_interview_session_repository),
+        interview_question_repository: IInterviewQuestionRepository = Depends(get_interview_question_repository),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
         uow: IUoW = Depends(get_uow)
@@ -70,7 +73,12 @@ async def get_user_controller(
         user_skill_repository=user_skill_repository,
         skill_repository=skill_repository,
         question_repository=question_repository,
+        user_question_repository=user_question_repository,
+        interview_session_repository=interview_session_repository,
+        interview_question_repository=interview_question_repository,
         salary_repository=salary_repository,
+        city_repository=city_repository,
+        direction_repository=direction_repository,
         openai_service=openai_service,
         uow=uow,
     )
@@ -80,7 +88,6 @@ async def get_user_controller(
         direction_repository=direction_repository,
         salary_repository=salary_repository,
         city_repository=city_repository,
-        openai_service=openai_service,
         hash_service=hash_service,
         user_service=user_service,
         uow=uow

@@ -87,6 +87,13 @@ class IUserSkillRepository(ABC):
         skill_id: int,
     ) -> bool: ...
 
+    @abstractmethod
+    async def delete_by_user_and_to_learn(
+        self,
+        user_id: int,
+        to_learn: bool,
+    ) -> int: ...
+
 class ISkillSearchService(ABC):
 
     @abstractmethod

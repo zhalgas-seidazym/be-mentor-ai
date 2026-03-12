@@ -617,3 +617,77 @@ class OpenAIService:
             logger.exception("Unexpected AI parsing error")
             return []
 
+    async def check_skill_in_direction(
+            self,
+            direction_name: str,
+            skill_name: str,
+            model: ChatGPTModel,
+            temperature: float = 0.2,
+    ) -> dict:
+        if not 0 <= temperature <= 2:
+            raise ValueError("temperature must be between 0 and 2")
+
+        prompt = f"""
+        You are a senior technical interviewer.
+
+        Decide whether the given skill belongs to the given career direction
+        and is appropriate as a theoretical interview module.
+
+        Direction: {direction_name}
+        Skill: {skill_name}
+
+        REQUIREMENTS:
+        1. If the skill belongs to the direction, return "belongs": true
+           and a match_percentage from 0 to 100.
+        2. If it does not belong, return "belongs": false and "match_percentage": null.
+        3. Return ONLY valid JSON:
+
+        {{
+          "belongs": true,
+          "match_percentage": 0
+        }}
+        """
+
+        try:
+            response = await self._client.responses.create(
+                model=model.value,
+                temperature=temperature,
+                input=prompt,
+            )
+
+            content = response.output_text
+            if not content:
+                logger.error("Empty response from AI")
+                return {}
+
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if not json_match:
+                logger.error(f"No JSON found in response: {content}")
+                return {}
+
+            clean_json = json_match.group()
+            parsed = json.loads(clean_json)
+
+            belongs = parsed.get("belongs")
+            match_percentage = parsed.get("match_percentage")
+
+            if not isinstance(belongs, bool):
+                return {}
+
+            if match_percentage is None:
+                match_value = None
+            else:
+                try:
+                    match_value = float(match_percentage)
+                except (TypeError, ValueError):
+                    match_value = None
+
+            return {
+                "belongs": belongs,
+                "match_percentage": match_value,
+            }
+
+        except Exception:
+            logger.exception("Unexpected AI parsing error")
+            return {}
+

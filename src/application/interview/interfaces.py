@@ -17,6 +17,9 @@ class IInterviewSessionRepository(ABC):
     @abstractmethod
     async def get_active_by_user(self, user_id: int) -> Optional[InterviewSessionDTO]: ...
 
+    @abstractmethod
+    async def delete_by_user(self, user_id: int) -> int: ...
+
 
 class IInterviewQuestionRepository(ABC):
     @abstractmethod
@@ -36,6 +39,9 @@ class IInterviewQuestionRepository(ABC):
 
     @abstractmethod
     async def count_followups(self, session_id: int, main_question_id: int) -> int: ...
+
+    @abstractmethod
+    async def delete_by_user(self, user_id: int) -> int: ...
 
 
 class IInterviewController(ABC):

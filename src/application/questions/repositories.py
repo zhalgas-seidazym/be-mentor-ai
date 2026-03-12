@@ -1,6 +1,6 @@
 ﻿from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -237,3 +237,26 @@ class UserQuestionRepository(IUserQuestionRepository):
 
         await self._session.delete(row)
         return True
+
+    async def delete_by_user(
+        self,
+        user_id: int,
+    ) -> int:
+        result = await self._session.execute(
+            delete(UserQuestion).where(UserQuestion.user_id == user_id)
+        )
+        return int(result.rowcount or 0)
+
+    async def delete_by_user_and_module(
+        self,
+        user_id: int,
+        module_id: int,
+    ) -> int:
+        question_ids_subq = select(Question.id).where(Question.skill_id == module_id)
+        result = await self._session.execute(
+            delete(UserQuestion).where(
+                UserQuestion.user_id == user_id,
+                UserQuestion.question_id.in_(question_ids_subq),
+            )
+        )
+        return int(result.rowcount or 0)

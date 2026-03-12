@@ -115,6 +115,9 @@ async def update_profile(
         user_id=user.id,
         name=body.name,
         city_id=body.city_id,
+        direction_id=body.direction_id,
+        skill_ids=body.skill_ids,
+        timezone=body.timezone,
         password=body.password,
         new_password=body.new_password,
     )

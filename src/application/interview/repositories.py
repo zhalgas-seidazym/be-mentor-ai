@@ -1,6 +1,6 @@
 ﻿from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -54,6 +54,12 @@ class InterviewSessionRepository(IInterviewSessionRepository):
         result = await self._session.execute(query)
         row = result.scalar_one_or_none()
         return interview_session_orm_to_dto(row) if row else None
+
+    async def delete_by_user(self, user_id: int) -> int:
+        result = await self._session.execute(
+            delete(InterviewSession).where(InterviewSession.user_id == user_id)
+        )
+        return int(result.rowcount or 0)
 
 
 class InterviewQuestionRepository(IInterviewQuestionRepository):
@@ -110,3 +116,12 @@ class InterviewQuestionRepository(IInterviewQuestionRepository):
         )
         result = await self._session.execute(query)
         return int(result.scalar_one())
+
+    async def delete_by_user(self, user_id: int) -> int:
+        session_ids_subq = select(InterviewSession.id).where(InterviewSession.user_id == user_id)
+        result = await self._session.execute(
+            delete(InterviewQuestion).where(
+                InterviewQuestion.session_id.in_(session_ids_subq)
+            )
+        )
+        return int(result.rowcount or 0)

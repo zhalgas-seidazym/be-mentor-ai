@@ -4,11 +4,15 @@ from fastapi import HTTPException, status as s
 
 from src.application.users.dtos import UserDTO
 from src.application.users.interfaces import IUserRepository
+from src.application.locations.interfaces import ICityRepository
+from src.application.directions.interfaces import IDirectionRepository
+from src.application.questions.interfaces import IUserQuestionRepository
+from src.application.interview.interfaces import IInterviewSessionRepository, IInterviewQuestionRepository
 from src.application.skills.dtos import SkillDTO, UserSkillDTO
 from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository
 from src.application.questions.dtos import QuestionDTO
 from src.application.questions.interfaces import IQuestionRepository
-from src.application.directions.dtos import SalaryDTO
+from src.application.directions.dtos import SalaryDTO, DirectionDTO
 from src.application.directions.interfaces import ISalaryRepository
 from src.domain.base_dto import PaginationDTO
 from src.domain.interfaces import IUoW, IOpenAIService
@@ -24,7 +28,12 @@ class UserService(IUserService):
         user_skill_repository: IUserSkillRepository,
         skill_repository: ISkillRepository,
         question_repository: IQuestionRepository,
+        user_question_repository: IUserQuestionRepository,
+        interview_session_repository: IInterviewSessionRepository,
+        interview_question_repository: IInterviewQuestionRepository,
         salary_repository: ISalaryRepository,
+        city_repository: ICityRepository,
+        direction_repository: IDirectionRepository,
         openai_service: IOpenAIService,
     ):
         self._uow = uow
@@ -32,7 +41,12 @@ class UserService(IUserService):
         self._user_skill_repository = user_skill_repository
         self._skill_repository = skill_repository
         self._question_repository = question_repository
+        self._user_question_repository = user_question_repository
+        self._interview_session_repository = interview_session_repository
+        self._interview_question_repository = interview_question_repository
         self._salary_repository = salary_repository
+        self._city_repository = city_repository
+        self._direction_repository = direction_repository
         self._openai_service = openai_service
 
     async def get_theoretical_skills(
@@ -98,6 +112,255 @@ class UserService(IUserService):
         user.skills = skills_list
         user.modules = modules_list
         return user
+
+    async def attach_ai_skills_as_modules(
+        self,
+        user_id: int,
+        ai_skills: List[UserSkillDTO],
+        existing_skill_names: List[str],
+        existing_skill_ids: List[int],
+    ) -> List[UserSkillDTO]:
+        return await self._attach_ai_skills_as_modules(
+            user_id=user_id,
+            ai_skills=ai_skills,
+            existing_skill_names=existing_skill_names,
+            existing_skill_ids=existing_skill_ids,
+        )
+
+    async def seed_questions_if_needed(
+        self,
+        module_id: int,
+        canonical_name: str,
+    ) -> None:
+        await self._seed_questions_if_needed(
+            module_id=module_id,
+            canonical_name=canonical_name,
+        )
+
+    async def update_profile(
+        self,
+        user: UserDTO,
+        name: Optional[str] = None,
+        city_id: Optional[int] = None,
+        direction_id: Optional[int] = None,
+        direction_name: Optional[str] = None,
+        unique_skill_ids: Optional[list[int]] = None,
+        skill_name_list: Optional[list[str]] = None,
+        timezone: Optional[str] = None,
+        hashed_password: Optional[str] = None,
+    ) -> UserDTO:
+        direction_changed = direction_id is not None and direction_id != user.direction_id
+
+        if unique_skill_ids is not None and skill_name_list is None:
+            skill_name_list = []
+            for skill_id in unique_skill_ids:
+                skill = await self._skill_repository.get_by_id(skill_id)
+                if not skill:
+                    raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Skill {skill_id} not found")
+                if skill.name:
+                    skill_name_list.append(skill.name)
+
+        existing_base_ids: set[int] = set()
+        if direction_changed or unique_skill_ids is not None:
+            base_res = await self._user_skill_repository.get_by_user_id(
+                user_id=user.id,
+                to_learn=False,
+            )
+            existing_base_ids = {
+                us.skill_id for us in base_res.items if us.skill_id is not None
+            }
+
+        if unique_skill_ids is None and direction_changed:
+            unique_skill_ids = list(existing_base_ids)
+            skill_name_list = []
+            for skill_id in unique_skill_ids:
+                skill = await self._skill_repository.get_by_id(skill_id)
+                if not skill:
+                    raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail=f"Skill {skill_id} not found")
+                if skill.name:
+                    skill_name_list.append(skill.name)
+
+        effective_direction = None
+        if direction_id is not None:
+            if direction_name:
+                effective_direction = DirectionDTO(
+                    id=direction_id,
+                    name=direction_name,
+                )
+            else:
+                effective_direction = await self._direction_repository.get_by_id(direction_id)
+            if not effective_direction:
+                raise HTTPException(
+                    status_code=s.HTTP_404_NOT_FOUND,
+                    detail=f"Direction {direction_id} not found",
+                )
+        elif (direction_changed or unique_skill_ids is not None) and user.direction_id is not None:
+            effective_direction = await self._direction_repository.get_by_id(user.direction_id)
+            if not effective_direction:
+                raise HTTPException(
+                    status_code=s.HTTP_404_NOT_FOUND,
+                    detail=f"Direction {user.direction_id} not found",
+                )
+
+        removed_base_ids: set[int] = set()
+        added_base_ids: set[int] = set()
+        removed_to_module: List[UserSkillDTO] = []
+        if unique_skill_ids is not None:
+            new_ids_set = set(unique_skill_ids)
+            removed_base_ids = existing_base_ids - new_ids_set
+            added_base_ids = new_ids_set - existing_base_ids
+
+            if removed_base_ids and effective_direction is not None:
+                for skill_id in removed_base_ids:
+                    skill = await self._skill_repository.get_by_id(skill_id)
+                    if not skill or not skill.name:
+                        continue
+
+                    ai_check = await self._openai_service.check_skill_in_direction(
+                        direction_name=effective_direction.name or "",
+                        skill_name=skill.name,
+                        model=ChatGPTModel.GPT_4_1,
+                    )
+
+                    if ai_check.get("belongs") is True:
+                        removed_to_module.append(
+                            UserSkillDTO(
+                                skill=SkillDTO(name=skill.name),
+                                to_learn=True,
+                                match_percentage=ai_check.get("match_percentage"),
+                            )
+                        )
+
+        ai_skills: List[UserSkillDTO] = []
+        if direction_changed:
+            if effective_direction is None:
+                raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Direction not found")
+            ai_skills = await self.get_theoretical_skills(
+                direction_name=effective_direction.name or "",
+                skill_names=skill_name_list or [],
+            )
+            if removed_to_module:
+                ai_skills = ai_skills + removed_to_module
+        elif removed_to_module:
+            ai_skills = removed_to_module
+
+        effective_city_id = city_id if city_id is not None else user.city_id
+        effective_direction_id = direction_id if direction_id is not None else user.direction_id
+
+        async with self._uow:
+            user_update = UserDTO(
+                name=name,
+                city_id=city_id,
+                direction_id=direction_id,
+                password=hashed_password,
+                timezone=timezone,
+            )
+            updated = await self._user_repository.update(user_id=user.id, dto=user_update)
+            if updated is None:
+                raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
+
+            if direction_changed:
+                await self._user_skill_repository.delete_by_user_and_to_learn(
+                    user_id=user.id,
+                    to_learn=True,
+                )
+                await self._user_question_repository.delete_by_user(user_id=user.id)
+                await self._interview_question_repository.delete_by_user(user_id=user.id)
+                await self._interview_session_repository.delete_by_user(user_id=user.id)
+
+            if unique_skill_ids is not None:
+                for skill_id in removed_base_ids:
+                    await self._user_skill_repository.delete(user_id=user.id, skill_id=skill_id)
+
+                for skill_id in added_base_ids:
+                    existing = await self._user_skill_repository.get_by_user_and_skill(
+                        user_id=user.id,
+                        skill_id=skill_id,
+                    )
+                    if existing and existing.to_learn:
+                        await self._user_skill_repository.update(
+                            user_id=user.id,
+                            skill_id=skill_id,
+                            dto=UserSkillDTO(to_learn=False, match_percentage=None),
+                        )
+                        await self._user_question_repository.delete_by_user_and_module(
+                            user_id=user.id,
+                            module_id=skill_id,
+                        )
+                    elif existing is None:
+                        await self._user_skill_repository.add(
+                            UserSkillDTO(
+                                user_id=user.id,
+                                skill_id=skill_id,
+                                to_learn=False,
+                            )
+                        )
+
+            if ai_skills and effective_direction is not None:
+                attach_skill_names = skill_name_list or []
+                attach_skill_ids = unique_skill_ids or list(existing_base_ids)
+                await self.attach_ai_skills_as_modules(
+                    user_id=user.id,
+                    ai_skills=ai_skills,
+                    existing_skill_names=attach_skill_names,
+                    existing_skill_ids=attach_skill_ids,
+                )
+
+            if effective_city_id is not None and effective_direction_id is not None:
+                existing_salary = await self._salary_repository.get_by_city_and_direction(
+                    city_id=effective_city_id,
+                    direction_id=effective_direction_id,
+                )
+
+                if existing_salary is None:
+                    city = await self._city_repository.get_by_id(
+                        effective_city_id,
+                        populate_country=True,
+                    )
+                    if not city:
+                        raise HTTPException(
+                            status_code=s.HTTP_404_NOT_FOUND,
+                            detail=f"City {effective_city_id} not found",
+                        )
+
+                    if effective_direction is None:
+                        effective_direction = await self._direction_repository.get_by_id(
+                            effective_direction_id,
+                        )
+                        if not effective_direction:
+                            raise HTTPException(
+                                status_code=s.HTTP_404_NOT_FOUND,
+                                detail=f"Direction {effective_direction_id} not found",
+                            )
+
+                    if not city.country or not city.country.name:
+                        raise HTTPException(
+                            status_code=s.HTTP_404_NOT_FOUND,
+                            detail="City country not found",
+                        )
+
+                    ai_salary = await self._openai_service.get_direction_salary(
+                        country=city.country.name,
+                        city=city.name or "",
+                        direction=effective_direction.name or "",
+                        model=ChatGPTModel.GPT_4_1,
+                    )
+                    if not ai_salary:
+                        raise HTTPException(
+                            status_code=s.HTTP_408_REQUEST_TIMEOUT,
+                            detail="Failed to generate salary, please try again",
+                        )
+
+                    await self._salary_repository.add(
+                        SalaryDTO(
+                            city_id=effective_city_id,
+                            direction_id=effective_direction_id,
+                            amount=ai_salary["amount"],
+                            currency=ai_salary["currency"],
+                        )
+                    )
+
+        return updated
 
     async def _update_user_profile(
         self,
