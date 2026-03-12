@@ -8,6 +8,7 @@ from src.application.directions.interfaces import (
     IDirectionSearchService,
     IDirectionRepository,
     IDirectionStatisticsService,
+    ISalaryRepository,
 )
 from src.application.locations.controllers import LocationController
 from src.application.modules.controllers import ModuleController
@@ -22,7 +23,8 @@ from src.application.users.auth.controllers import AuthController
 from src.application.users.auth.interfaces import IAuthController, IEmailOtpService, IHashService, IOAuthService
 from src.application.users.interfaces import IUserRepository
 from src.application.users.user.controllers import UserController
-from src.application.users.user.interfaces import IUserController
+from src.application.users.user.interfaces import IUserController, IUserService
+from src.application.users.user.services import UserService
 from src.application.interview.controllers import InterviewController
 from src.application.interview.interfaces import IInterviewController, IInterviewSessionRepository, IInterviewQuestionRepository
 from src.application.learning_recommendations.controllers import LearningRecommendationController
@@ -63,16 +65,24 @@ async def get_user_controller(
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
         uow: IUoW = Depends(get_uow)
 ) -> IUserController:
-    return UserController(
+    user_service: IUserService = UserService(
         user_repository=user_repository,
         user_skill_repository=user_skill_repository,
         skill_repository=skill_repository,
         question_repository=question_repository,
+        salary_repository=salary_repository,
+        openai_service=openai_service,
+        uow=uow,
+    )
+    return UserController(
+        user_repository=user_repository,
+        skill_repository=skill_repository,
         direction_repository=direction_repository,
         salary_repository=salary_repository,
         city_repository=city_repository,
         openai_service=openai_service,
         hash_service=hash_service,
+        user_service=user_service,
         uow=uow
     )
 
