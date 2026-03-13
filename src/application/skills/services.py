@@ -136,11 +136,10 @@ class SkillSearchService:
             name: Optional[str] = None,
             pagination: Optional[PaginationDTO[SkillDTO]] = None,
     ) -> PaginationDTO[SkillDTO]:
-
         pagination = pagination or PaginationDTO[SkillDTO]()
 
         page = max(pagination.page or 1, 1)
-        per_page = max(pagination.per_page or 10, 1)
+        per_page = min(pagination.per_page or 10, 100)
 
         from_value = (page - 1) * per_page
 

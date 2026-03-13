@@ -47,7 +47,8 @@ async def create_skill(
 async def skill_autocomplete(
         controller: Annotated[ISkillController, Depends(get_skill_controller)],
         q: Optional[str] = Query(None),
-        pagination: PaginationSchema = Depends(PaginationSchema.as_query())
+        pagination: PaginationSchema = Depends(PaginationSchema.as_query()),
+        user: UserDTO = Depends(get_access_user)
 ):
     return await controller.skill_autocomplete(PaginationDTO[SkillDTO](**pagination.dict()), q=q)
 

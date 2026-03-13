@@ -124,10 +124,14 @@ async def get_module_controller(
 async def get_question_controller(
         question_repository: IQuestionRepository = Depends(get_question_repository),
         user_question_repository: IUserQuestionRepository = Depends(get_user_question_repository),
+        skill_repository: ISkillRepository = Depends(get_skill_repository),
+        user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
 ) -> IQuestionController:
     return QuestionController(
         question_repository=question_repository,
         user_question_repository=user_question_repository,
+        skill_repository=skill_repository,
+        user_skill_repository=user_skill_repository,
     )
 
 @inject

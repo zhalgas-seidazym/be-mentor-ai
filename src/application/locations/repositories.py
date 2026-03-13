@@ -37,13 +37,6 @@ class CountryRepository(ICountryRepository):
         name: Optional[str] = None,
         pagination: Optional[PaginationDTO[CountryDTO]] = None,
     ) -> PaginationDTO[CountryDTO]:
-
-        pagination = pagination or PaginationDTO[CountryDTO]()
-
-        page = max(pagination.page or 1, 1)
-        per_page = max(pagination.per_page or 10, 1)
-        offset = (page - 1) * per_page
-
         base_query = self._base_query()
 
         if name:
@@ -55,7 +48,15 @@ class CountryRepository(ICountryRepository):
         count_result = await self._session.execute(count_query)
         total = count_result.scalar_one()
 
-        query = base_query.offset(offset).limit(per_page)
+        if pagination is None or pagination.per_page is None:
+            query = base_query
+            page = 1
+            per_page = total
+        else:
+            page = max(pagination.page or 1, 1)
+            per_page = max(pagination.per_page or 10, 1)
+            offset = (page - 1) * per_page
+            query = base_query.offset(offset).limit(per_page)
         result = await self._session.execute(query)
         rows = result.scalars().all()
 
@@ -120,13 +121,6 @@ class CityRepository(ICityRepository):
         pagination: Optional[PaginationDTO[CityDTO]] = None,
         populate_country: bool = False,
     ) -> PaginationDTO[CityDTO]:
-
-        pagination = pagination or PaginationDTO[CityDTO]()
-
-        page = max(pagination.page or 1, 1)
-        per_page = max(pagination.per_page or 10, 1)
-        offset = (page - 1) * per_page
-
         base_query = self._base_query(populate_country)
 
         if name:
@@ -143,7 +137,15 @@ class CityRepository(ICityRepository):
         count_result = await self._session.execute(count_query)
         total = count_result.scalar_one()
 
-        query = base_query.offset(offset).limit(per_page)
+        if pagination is None or pagination.per_page is None:
+            query = base_query
+            page = 1
+            per_page = total
+        else:
+            page = max(pagination.page or 1, 1)
+            per_page = max(pagination.per_page or 10, 1)
+            offset = (page - 1) * per_page
+            query = base_query.offset(offset).limit(per_page)
         result = await self._session.execute(query)
         rows = result.scalars().all()
 

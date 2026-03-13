@@ -20,7 +20,6 @@ class ModuleStatisticsService(IModuleStatisticsService):
         user_id: int,
         module_id: int,
     ) -> ProgressStatisticsDTO:
-
         questions_page = await self._question_repository.get(
             pagination=None,
             module_id=module_id,

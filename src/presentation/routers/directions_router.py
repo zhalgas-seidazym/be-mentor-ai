@@ -67,7 +67,8 @@ async def get_ai_directions(
 async def direction_autocomplete(
         controller: Annotated[IDirectionSalaryController, Depends(get_direction_salary_controller)],
         q: Optional[str] = Query(None),
-        pagination: PaginationSchema = Depends(PaginationSchema.as_query())
+        pagination: PaginationSchema = Depends(PaginationSchema.as_query()),
+        user: UserDTO = Depends(get_access_user),
 ):
     return await controller.direction_autocomplete(PaginationDTO[DirectionDTO](**pagination.dict()), q=q)
 
@@ -98,11 +99,13 @@ async def get_my_salary(
     response_model_exclude_none=True,
     responses={
         s.HTTP_404_NOT_FOUND: RESPONSE_404,
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
     }
 )
 async def get_direction_by_id(
         controller: Annotated[IDirectionSalaryController, Depends(get_direction_salary_controller)],
         direction_id: int,
+        user: UserDTO = Depends(get_access_user),
 ):
     return await controller.get_by_id(direction_id)
 

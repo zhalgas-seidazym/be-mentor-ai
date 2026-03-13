@@ -92,6 +92,7 @@ class IQuestionController(ABC):
     @abstractmethod
     async def get_by_module_id(
         self,
+        user_id: int,
         module_id: int,
         pagination: Optional[PaginationDTO[QuestionDTO]] = None,
         populate_skill: bool = False,

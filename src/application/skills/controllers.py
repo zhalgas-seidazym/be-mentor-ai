@@ -25,10 +25,7 @@ class SkillController(ISkillController):
         count = await self._skill_search_service.count()
 
         if count < 1:
-            total = await self._skill_repository.get()
-            total = total.total
-
-            skills = await self._skill_repository.get(pagination=PaginationDTO[SkillDTO](per_page=total))
+            skills = await self._skill_repository.get()
             skills = skills.items
 
             await self._skill_search_service.bulk_index(skills)

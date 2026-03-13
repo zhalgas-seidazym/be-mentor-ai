@@ -92,12 +92,7 @@ class DirectionSalaryController(IDirectionSalaryController):
         count = await self._direction_search_service.count()
 
         if count < 1:
-            total = await self._direction_repository.get()
-            total = total.total
-
-            directions = await self._direction_repository.get(
-                pagination=PaginationDTO[DirectionDTO](per_page=total)
-            )
+            directions = await self._direction_repository.get()
             directions = directions.items
 
             await self._direction_search_service.bulk_index(directions)

@@ -91,4 +91,4 @@ class SortSchema(BaseSchema):
 
 class PaginationSchema(BaseSchema):
     page: int = 1
-    per_page: int = 10
+    per_page: Optional[int] = None

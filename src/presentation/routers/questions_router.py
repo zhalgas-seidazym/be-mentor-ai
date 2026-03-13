@@ -7,7 +7,7 @@ from src.application.questions.interfaces import IQuestionController
 from src.application.users.dtos import UserDTO
 from src.domain.base_dto import PaginationDTO
 from src.domain.base_schema import PaginationSchema
-from src.domain.responses import RESPONSE_400, RESPONSE_401, RESPONSE_404
+from src.domain.responses import RESPONSE_400, RESPONSE_401, RESPONSE_404, RESPONSE_403
 from src.presentation.depends.controllers import get_question_controller
 from src.presentation.depends.security import get_access_user
 
@@ -24,6 +24,8 @@ router = APIRouter(
     response_model_exclude_none=True,
     responses={
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_403_FORBIDDEN: RESPONSE_403,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
     },
 )
 async def get_questions_by_module_id(
@@ -34,6 +36,7 @@ async def get_questions_by_module_id(
     pagination: PaginationSchema = Depends(PaginationSchema.as_query()),
 ):
     return await controller.get_by_module_id(
+        user_id=user.id,
         module_id=module_id,
         pagination=PaginationDTO[QuestionDTO](**pagination.dict()),
         populate_skill=populate_skill,
@@ -48,6 +51,8 @@ async def get_questions_by_module_id(
     responses={
         s.HTTP_400_BAD_REQUEST: RESPONSE_400,
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_403_FORBIDDEN: RESPONSE_403,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
     },
 )
 async def get_user_answers(

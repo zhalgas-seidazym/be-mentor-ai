@@ -53,12 +53,6 @@ class DirectionRepository(IDirectionRepository):
             name: Optional[str] = None,
             pagination: Optional[PaginationDTO[DirectionDTO]] = None,
     ) -> PaginationDTO[DirectionDTO]:
-        pagination = pagination or PaginationDTO[DirectionDTO]()
-
-        page = max(pagination.page or 1, 1)
-        per_page = max(pagination.per_page or 10, 1)
-        offset = (page - 1) * per_page
-
         base_query = self._base_query()
 
         # --- filter ---
@@ -75,7 +69,15 @@ class DirectionRepository(IDirectionRepository):
         total = count_result.scalar_one()
 
         # --- pagination ---
-        query = base_query.offset(offset).limit(per_page)
+        if pagination is None or pagination.per_page is None:
+            query = base_query
+            page = 1
+            per_page = total
+        else:
+            page = max(pagination.page or 1, 1)
+            per_page = max(pagination.per_page or 10, 1)
+            offset = (page - 1) * per_page
+            query = base_query.offset(offset).limit(per_page)
         result = await self._session.execute(query)
         rows = result.scalars().all()
 
