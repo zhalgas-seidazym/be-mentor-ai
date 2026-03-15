@@ -102,3 +102,10 @@ class IVacancyController(ABC):
         populate_city: bool = False,
         populate_direction: bool = False,
     ) -> VacancyDTO: ...
+
+    @abstractmethod
+    async def get_vacancy_skills(
+        self,
+        vacancy_id: int,
+        populate_skill: bool = False,
+    ) -> List[VacancySkillDTO]: ...

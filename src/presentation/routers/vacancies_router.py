@@ -2,7 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query, status as s
 
-from src.application.vacancies.dtos import UserVacancyDTO, VacancyDTO
+from src.application.vacancies.dtos import UserVacancyDTO, VacancyDTO, VacancySkillDTO
 from src.application.vacancies.interfaces import IVacancyController
 from src.application.users.dtos import UserDTO
 from src.domain.responses import RESPONSE_401, RESPONSE_404
@@ -61,4 +61,26 @@ async def get_vacancy_by_id(
         populate_skills=populate_skills,
         populate_city=populate_city,
         populate_direction=populate_direction,
+    )
+
+@router.get(
+    "/{vacancy_id}/skills",
+    summary="Get vacancy skills",
+    status_code=s.HTTP_200_OK,
+    response_model=List[VacancySkillDTO],
+    response_model_exclude_none=True,
+    responses={
+        s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+    },
+)
+async def get_vacancy_skills(
+    controller: Annotated[IVacancyController, Depends(get_vacancy_controller)],
+    vacancy_id: int,
+    populate_skill: bool = Query(False),
+    user: UserDTO = Depends(get_access_user),
+):
+    return await controller.get_vacancy_skills(
+        vacancy_id=vacancy_id,
+        populate_skill=populate_skill,
     )

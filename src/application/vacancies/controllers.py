@@ -2,17 +2,24 @@ from typing import List
 
 from fastapi import HTTPException, status as s
 
-from src.application.vacancies.dtos import UserVacancyDTO, VacancyDTO
-from src.application.vacancies.interfaces import IVacancyController, IUserVacancyRepository, IVacancyRepository
+from src.application.vacancies.dtos import UserVacancyDTO, VacancyDTO, VacancySkillDTO
+from src.application.vacancies.interfaces import (
+    IVacancyController,
+    IUserVacancyRepository,
+    IVacancyRepository,
+    IVacancySkillRepository,
+)
 
 
 class VacancyController(IVacancyController):
     def __init__(
         self,
         vacancy_repository: IVacancyRepository,
+        vacancy_skill_repository: IVacancySkillRepository,
         user_vacancy_repository: IUserVacancyRepository,
     ):
         self._vacancy_repository = vacancy_repository
+        self._vacancy_skill_repository = vacancy_skill_repository
         self._user_vacancy_repository = user_vacancy_repository
 
     async def get_my_vacancies(
@@ -45,3 +52,16 @@ class VacancyController(IVacancyController):
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Vacancy not found")
 
         return vacancy
+
+    async def get_vacancy_skills(
+        self,
+        vacancy_id: int,
+        populate_skill: bool = False,
+    ) -> List[VacancySkillDTO]:
+        vacancy = await self._vacancy_repository.get_by_id(vacancy_id=vacancy_id)
+        if vacancy is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Vacancy not found")
+        return await self._vacancy_skill_repository.get_by_vacancy_id(
+            vacancy_id=vacancy_id,
+            populate_skill=populate_skill,
+        )

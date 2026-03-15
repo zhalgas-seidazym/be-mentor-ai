@@ -34,6 +34,7 @@ from src.application.vacancies.interfaces import (
     IVacancyController,
     IUserVacancyRepository,
     IVacancyRepository,
+    IVacancySkillRepository,
 )
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
@@ -191,10 +192,12 @@ async def get_location_controller(
 
 async def get_vacancy_controller(
         vacancy_repository: IVacancyRepository = Depends(get_vacancy_repository),
+        vacancy_skill_repository: IVacancySkillRepository = Depends(get_vacancy_skill_repository),
         user_vacancy_repository: IUserVacancyRepository = Depends(get_user_vacancy_repository),
 ) -> IVacancyController:
     return VacancyController(
         vacancy_repository=vacancy_repository,
+        vacancy_skill_repository=vacancy_skill_repository,
         user_vacancy_repository=user_vacancy_repository,
     )
 
