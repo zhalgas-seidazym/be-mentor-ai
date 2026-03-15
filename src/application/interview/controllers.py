@@ -133,7 +133,7 @@ class InterviewController(IInterviewController):
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="Interview session is not active")
 
         # Load the interview question (main or followup)
-        iq = await self._interview_question_repository.get_by_id(interview_question_id, populate_question=True)
+        iq = await self._interview_question_repository.get_by_id(interview_question_id)
         if iq is None or iq.session_id != session_id:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Interview question not found")
 
@@ -159,7 +159,7 @@ class InterviewController(IInterviewController):
         # Load main question when current is a followup
         main_question = iq
         if iq.is_followup:
-            main_question = await self._interview_question_repository.get_by_id(main_question_id, populate_question=True)
+            main_question = await self._interview_question_repository.get_by_id(main_question_id)
             if main_question is None:
                 raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Main question not found")
 
@@ -169,7 +169,10 @@ class InterviewController(IInterviewController):
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="Main question has no base question")
 
         # Prefer stored question text, fallback to loaded Question
-        question_text = iq.question_text or (iq.question.question if iq.question else None)
+        question_text = iq.question_text
+        if not question_text and base_question_id is not None:
+            base_question = await self._question_repository.get_by_id(base_question_id)
+            question_text = base_question.question if base_question else None
         if not question_text:
             raise HTTPException(status_code=s.HTTP_400_BAD_REQUEST, detail="Question text not found")
 
@@ -328,6 +331,24 @@ class InterviewController(IInterviewController):
             "main_question_index": next_index,
             "total_main_questions": session.total_main_questions or 10,
         }
+
+    async def get_question(self, interview_question_id: int, user_id: int) -> InterviewQuestionDTO:
+        iq = await self._interview_question_repository.get_by_id(interview_question_id)
+        if iq is None or iq.session_id is None:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Interview question not found")
+
+        session = await self._interview_session_repository.get_by_id(iq.session_id)
+        if session is None or session.user_id != user_id:
+            raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Interview question not found")
+
+        text = iq.question_text
+        if not text and iq.question_id is not None:
+            base_question = await self._question_repository.get_by_id(iq.question_id)
+            text = base_question.question if base_question else None
+
+        if text and text != iq.question_text:
+            iq.question_text = text
+        return iq
 
     async def get_session(self, session_id: int, user_id: int) -> Dict[str, Any]:
         # Validate session ownership

@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Optional
 
 from src.domain.value_objects import InterviewStatus
-from src.application.questions.dtos import QuestionDTO
 
 
 @dataclass
@@ -23,7 +22,6 @@ class InterviewQuestionDTO:
     session_id: Optional[int] = None
     question_id: Optional[int] = None
     question_text: Optional[str] = None
-    question: Optional[QuestionDTO] = None
     is_followup: Optional[bool] = None
     main_question_id: Optional[int] = None
     followup_index: Optional[int] = None

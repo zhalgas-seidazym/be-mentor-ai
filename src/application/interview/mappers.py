@@ -1,11 +1,7 @@
 ﻿from typing import Optional
 
-from sqlalchemy import inspect
-from sqlalchemy.orm import NO_VALUE
-
 from src.application.interview.dtos import InterviewSessionDTO, InterviewQuestionDTO
 from src.application.interview.models import InterviewSession, InterviewQuestion
-from src.application.questions.mappers import question_orm_to_dto
 
 
 def interview_session_orm_to_dto(row: InterviewSession) -> Optional[InterviewSessionDTO]:
@@ -44,26 +40,12 @@ def interview_session_dto_to_orm(
     return row
 
 
-def interview_question_orm_to_dto(
-    row: InterviewQuestion,
-    populate_question: bool = False,
-) -> Optional[InterviewQuestionDTO]:
-
-    question_dto = None
-
-    if populate_question:
-        state = inspect(row)
-        question_loaded = state.attrs.question.loaded_value
-
-        if question_loaded is not None and question_loaded is not NO_VALUE:
-            question_dto = question_orm_to_dto(question_loaded, populate_skill=True)
-
+def interview_question_orm_to_dto(row: InterviewQuestion) -> Optional[InterviewQuestionDTO]:
     return InterviewQuestionDTO(
         id=row.id,
         session_id=row.session_id,
         question_id=row.question_id,
         question_text=row.question_text,
-        question=question_dto,
         is_followup=row.is_followup,
         main_question_id=row.main_question_id,
         followup_index=row.followup_index,

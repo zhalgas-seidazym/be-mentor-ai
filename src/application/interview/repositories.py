@@ -2,7 +2,6 @@
 
 from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.application.interview.dtos import InterviewSessionDTO, InterviewQuestionDTO
 from src.application.interview.interfaces import IInterviewSessionRepository, IInterviewQuestionRepository
@@ -81,14 +80,11 @@ class InterviewQuestionRepository(IInterviewQuestionRepository):
         await self._session.refresh(row)
         return interview_question_orm_to_dto(row)
 
-    async def get_by_id(self, interview_question_id: int, populate_question: bool = False) -> Optional[InterviewQuestionDTO]:
-        query = select(InterviewQuestion)
-        if populate_question:
-            query = query.options(selectinload(InterviewQuestion.question))
-        query = query.where(InterviewQuestion.id == interview_question_id)
+    async def get_by_id(self, interview_question_id: int) -> Optional[InterviewQuestionDTO]:
+        query = select(InterviewQuestion).where(InterviewQuestion.id == interview_question_id)
         result = await self._session.execute(query)
         row = result.scalar_one_or_none()
-        return interview_question_orm_to_dto(row, populate_question=populate_question) if row else None
+        return interview_question_orm_to_dto(row) if row else None
 
     async def get_main_questions(self, session_id: int) -> List[InterviewQuestionDTO]:
         query = select(InterviewQuestion).where(
