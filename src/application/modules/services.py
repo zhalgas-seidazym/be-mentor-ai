@@ -33,9 +33,6 @@ class ModuleStatisticsService(IModuleStatisticsService):
         )
         user_questions = user_questions_page.items or []
 
-        met_question_ids = {uq.question_id for uq in user_questions if uq.question_id is not None}
-        met_questions = len(met_question_ids)
-
         latest_by_question: Dict[int, int] = {}
         status_by_question: Dict[int, QuestionStatus] = {}
 
@@ -50,6 +47,7 @@ class ModuleStatisticsService(IModuleStatisticsService):
 
         correct_answers = sum(1 for s in status_by_question.values() if s == QuestionStatus.SATISFACTORY)
         incorrect_answers = sum(1 for s in status_by_question.values() if s == QuestionStatus.UNSATISFACTORY)
+        met_questions = len(status_by_question)
 
         readiness_percentage = 0.0
         if total_questions > 0:
