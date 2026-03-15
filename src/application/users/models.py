@@ -107,4 +107,10 @@ class User(Base, TimestampMixin):
         back_populates="users",
     )
 
+    user_vacancies: Mapped[list["UserVacancy"]] = relationship(
+        "UserVacancy",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
 

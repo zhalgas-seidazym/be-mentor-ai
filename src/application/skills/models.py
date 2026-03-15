@@ -41,6 +41,12 @@ class Skill(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
+    vacancy_skills: Mapped[list["VacancySkill"]] = relationship(
+        "VacancySkill",
+        back_populates="skill",
+        cascade="all, delete-orphan",
+    )
+
 
 class UserSkill(Base):
     __tablename__ = "user_skills"

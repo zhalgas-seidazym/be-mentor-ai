@@ -14,6 +14,7 @@ from src.application.directions.models import Direction, Salary
 from src.application.questions.models import Question, UserQuestion
 from src.application.interview.models import InterviewSession, InterviewQuestion
 from src.application.learning_recommendations.models import LearningRecommendation
+from src.application.vacancies.models import Vacancy, VacancySkill, UserVacancy
 
 
 

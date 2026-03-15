@@ -21,3 +21,8 @@ class QuestionStatus(str, Enum):
 class InterviewStatus(str, Enum):
     ACTIVE = "active"
     COMPLETED = "completed"
+
+
+class VacancyType(str, Enum):
+    ONLINE = "online"
+    OFFLINE = "offline"
