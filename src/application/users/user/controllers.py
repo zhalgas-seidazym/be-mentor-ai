@@ -1,5 +1,8 @@
 from typing import Dict, Optional
 
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 from fastapi import HTTPException, status as s
 
 from src.application.users.dtos import UserDTO
@@ -127,8 +130,36 @@ class UserController(IUserController):
         if not user:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="User not found")
 
+        tz_name = user.timezone or "UTC"
+        try:
+            tzinfo = ZoneInfo(tz_name)
+        except Exception:
+            tzinfo = ZoneInfo("UTC")
+
+        today = datetime.now(tzinfo).date()
+        last_day = user.last_interview_day
+        current_streak = user.current_streak or 0
+
+        # If user missed at least one full day since last interview, reset streak.
+        if last_day is None:
+            if current_streak != 0:
+                async with self._uow:
+                    await self._user_repository.update(
+                        user_id,
+                        UserDTO(current_streak=0),
+                    )
+                current_streak = 0
+        elif last_day < today - timedelta(days=1):
+            if current_streak != 0:
+                async with self._uow:
+                    await self._user_repository.update(
+                        user_id,
+                        UserDTO(current_streak=0),
+                    )
+                current_streak = 0
+
         return {
-            "current_streak": user.current_streak,
+            "current_streak": current_streak,
             "longest_streak": user.longest_streak,
             "last_interview_day": user.last_interview_day,
             "timezone": user.timezone,
