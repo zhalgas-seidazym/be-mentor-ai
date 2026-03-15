@@ -15,6 +15,8 @@ from src.application.interview.interfaces import IInterviewSessionRepository, II
 from src.application.interview.repositories import InterviewSessionRepository, InterviewQuestionRepository
 from src.application.learning_recommendations.interfaces import ILearningRecommendationRepository
 from src.application.learning_recommendations.repositories import LearningRecommendationRepository
+from src.application.vacancies.interfaces import IVacancyRepository, IVacancySkillRepository, IUserVacancyRepository
+from src.application.vacancies.repositories import VacancyRepository, VacancySkillRepository, UserVacancyRepository
 from src.presentation.depends.session import get_session
 
 
@@ -77,3 +79,18 @@ async def get_learning_recommendation_repository(
         session: AsyncSession = Depends(get_session),
 ) -> ILearningRecommendationRepository:
     return LearningRecommendationRepository(session)
+
+async def get_vacancy_repository(
+        session: AsyncSession = Depends(get_session),
+) -> IVacancyRepository:
+    return VacancyRepository(session)
+
+async def get_vacancy_skill_repository(
+        session: AsyncSession = Depends(get_session),
+) -> IVacancySkillRepository:
+    return VacancySkillRepository(session)
+
+async def get_user_vacancy_repository(
+        session: AsyncSession = Depends(get_session),
+) -> IUserVacancyRepository:
+    return UserVacancyRepository(session)

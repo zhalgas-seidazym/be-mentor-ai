@@ -6,9 +6,41 @@ from sqlalchemy.orm import NO_VALUE
 from src.application.vacancies.dtos import VacancyDTO, VacancySkillDTO, UserVacancyDTO
 from src.application.vacancies.models import Vacancy, VacancySkill, UserVacancy
 from src.application.skills.mappers import skill_orm_to_dto
+from src.application.locations.mappers import city_orm_to_dto
+from src.application.directions.mappers import direction_orm_to_dto
 
 
-def vacancy_orm_to_dto(row: Vacancy) -> Optional[VacancyDTO]:
+def vacancy_orm_to_dto(
+    row: Vacancy,
+    populate_skills: bool = False,
+    populate_city: bool = False,
+    populate_direction: bool = False,
+) -> Optional[VacancyDTO]:
+    vacancy_skills = None
+    city = None
+
+    if populate_skills:
+        state = inspect(row)
+        vs_loaded = state.attrs.vacancy_skills.loaded_value
+        if vs_loaded is not None and vs_loaded is not NO_VALUE:
+            vacancy_skills = [
+                vacancy_skill_orm_to_dto(vs, populate_skill=True)
+                for vs in vs_loaded
+            ]
+
+    if populate_city:
+        state = inspect(row)
+        city_loaded = state.attrs.city.loaded_value
+        if city_loaded is not None and city_loaded is not NO_VALUE:
+            city = city_orm_to_dto(city_loaded, populate_country=False)
+
+    direction = None
+    if populate_direction:
+        state = inspect(row)
+        direction_loaded = state.attrs.direction.loaded_value
+        if direction_loaded is not None and direction_loaded is not NO_VALUE:
+            direction = direction_orm_to_dto(direction_loaded)
+
     return VacancyDTO(
         id=row.id,
         title=row.title,
@@ -20,6 +52,9 @@ def vacancy_orm_to_dto(row: Vacancy) -> Optional[VacancyDTO]:
         url=row.url,
         created_at=row.created_at,
         updated_at=row.updated_at,
+        vacancy_skills=vacancy_skills,
+        city=city,
+        direction=direction,
     )
 
 

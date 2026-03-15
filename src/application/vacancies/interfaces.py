@@ -10,7 +10,13 @@ class IVacancyRepository(ABC):
     async def add(self, dto: VacancyDTO) -> Optional[VacancyDTO]: ...
 
     @abstractmethod
-    async def get_by_id(self, vacancy_id: int) -> Optional[VacancyDTO]: ...
+    async def get_by_id(
+        self,
+        vacancy_id: int,
+        populate_skills: bool = False,
+        populate_city: bool = False,
+        populate_direction: bool = False,
+    ) -> Optional[VacancyDTO]: ...
 
     @abstractmethod
     async def get(
@@ -78,3 +84,21 @@ class IUserVacancyRepository(ABC):
 
     @abstractmethod
     async def delete(self, user_id: int, vacancy_id: int) -> bool: ...
+
+
+class IVacancyController(ABC):
+    @abstractmethod
+    async def get_my_vacancies(
+        self,
+        user_id: int,
+        populate_vacancy: bool = False,
+    ) -> List[UserVacancyDTO]: ...
+
+    @abstractmethod
+    async def get_by_id(
+        self,
+        vacancy_id: int,
+        populate_skills: bool = False,
+        populate_city: bool = False,
+        populate_direction: bool = False,
+    ) -> VacancyDTO: ...

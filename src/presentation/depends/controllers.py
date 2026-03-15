@@ -29,6 +29,12 @@ from src.application.interview.controllers import InterviewController
 from src.application.interview.interfaces import IInterviewController, IInterviewSessionRepository, IInterviewQuestionRepository
 from src.application.learning_recommendations.controllers import LearningRecommendationController
 from src.application.learning_recommendations.interfaces import ILearningRecommendationController, ILearningRecommendationRepository
+from src.application.vacancies.controllers import VacancyController
+from src.application.vacancies.interfaces import (
+    IVacancyController,
+    IUserVacancyRepository,
+    IVacancyRepository,
+)
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
 from src.presentation.depends.session import get_uow
@@ -181,6 +187,15 @@ async def get_location_controller(
     return LocationController(
         country_repository=country_repository,
         city_repository=city_repository,
+    )
+
+async def get_vacancy_controller(
+        vacancy_repository: IVacancyRepository = Depends(get_vacancy_repository),
+        user_vacancy_repository: IUserVacancyRepository = Depends(get_user_vacancy_repository),
+) -> IVacancyController:
+    return VacancyController(
+        vacancy_repository=vacancy_repository,
+        user_vacancy_repository=user_vacancy_repository,
     )
 
 @inject

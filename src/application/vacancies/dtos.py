@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
+from src.application.locations.dtos import CityDTO
+from src.application.directions.dtos import DirectionDTO
 from src.application.skills.dtos import SkillDTO
 from src.domain.value_objects import VacancyType
 
@@ -18,6 +20,9 @@ class VacancyDTO:
     url: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    vacancy_skills: Optional[List["VacancySkillDTO"]] = None
+    city: Optional[CityDTO] = None
+    direction: Optional[DirectionDTO] = None
 
 
 @dataclass

@@ -26,8 +26,22 @@ class VacancyRepository(IVacancyRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    def _base_query(self):
-        return select(Vacancy)
+    def _base_query(
+        self,
+        populate_skills: bool = False,
+        populate_city: bool = False,
+        populate_direction: bool = False,
+    ):
+        query = select(Vacancy)
+        if populate_skills:
+            query = query.options(
+                selectinload(Vacancy.vacancy_skills).selectinload(VacancySkill.skill)
+            )
+        if populate_city:
+            query = query.options(selectinload(Vacancy.city))
+        if populate_direction:
+            query = query.options(selectinload(Vacancy.direction))
+        return query
 
     async def _fetch_one(self, query) -> Optional[VacancyDTO]:
         result = await self._session.execute(query)
@@ -41,9 +55,29 @@ class VacancyRepository(IVacancyRepository):
         await self._session.refresh(row)
         return vacancy_orm_to_dto(row)
 
-    async def get_by_id(self, vacancy_id: int) -> Optional[VacancyDTO]:
-        query = self._base_query().where(Vacancy.id == vacancy_id)
-        return await self._fetch_one(query)
+    async def get_by_id(
+        self,
+        vacancy_id: int,
+        populate_skills: bool = False,
+        populate_city: bool = False,
+        populate_direction: bool = False,
+    ) -> Optional[VacancyDTO]:
+        query = self._base_query(
+            populate_skills=populate_skills,
+            populate_city=populate_city,
+            populate_direction=populate_direction,
+        )
+        query = query.where(Vacancy.id == vacancy_id)
+        result = await self._session.execute(query)
+        row = result.scalars().first()
+        if not row:
+            return None
+        return vacancy_orm_to_dto(
+            row,
+            populate_skills=populate_skills,
+            populate_city=populate_city,
+            populate_direction=populate_direction,
+        )
 
     async def get(
         self,
