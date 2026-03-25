@@ -62,6 +62,7 @@ async def start_interview(
                             "summary": "Follow-up needed",
                             "value": {
                                 "status": "need_followup",
+                                "user_answer_text": "Stack is memory for function calls, heap is for dynamic allocation.",
                                 "feedback": "Good start, but mention memory management specifics.",
                                 "followup_question": {
                                     "interview_question_id": 777,
@@ -76,6 +77,7 @@ async def start_interview(
                             "value": {
                                 "status": "final",
                                 "result": "satisfactory",
+                                "user_answer_text": "Collisions are handled via chaining or open addressing.",
                                 "feedback": "Solid explanation with correct tradeoffs.",
                                 "next_question": {
                                     "interview_question_id": 502,
@@ -90,6 +92,7 @@ async def start_interview(
                             "summary": "Interview completed",
                             "value": {
                                 "status": "completed",
+                                "user_answer_text": "Answer text of the last question.",
                                 "current_streak": 5,
                                 "longest_streak": 12,
                                 "last_interview_day": "2026-03-05"
@@ -101,6 +104,7 @@ async def start_interview(
         },
         s.HTTP_400_BAD_REQUEST: RESPONSE_400,
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
     },
 )
 async def answer_interview_question(
@@ -187,7 +191,7 @@ async def get_active_interview_session(
                 }
             }
         },
-        s.HTTP_400_BAD_REQUEST: RESPONSE_400,
+        s.HTTP_404_NOT_FOUND: RESPONSE_404,
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
     },
 )
