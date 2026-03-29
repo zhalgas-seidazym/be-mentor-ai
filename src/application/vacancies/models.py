@@ -1,7 +1,9 @@
 from typing import Optional
 
-from sqlalchemy import Integer, String, ForeignKey, Numeric, Enum as SQLEnum, Text
+from sqlalchemy import Integer, String, ForeignKey, Numeric, Enum as SQLEnum, Text, UniqueConstraint, Date, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import datetime
+from decimal import Decimal
 
 from src.infrastructure.dbs.postgre import Base
 from src.domain.base_model import TimestampMixin
@@ -125,3 +127,23 @@ class UserVacancy(Base):
         "Vacancy",
         back_populates="user_vacancies",
     )
+
+
+class ExchangeRate(Base):
+    __tablename__ = "exchange_rates"
+
+    __table_args__ = (
+        UniqueConstraint("rate_date", "currency_code", "source", name="uq_exchange_rates"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    rate_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    nominal: Mapped[int] = mapped_column(Integer, nullable=False)
+    rate_value_kzt: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
+    rate_per_unit_kzt: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
+    source: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    

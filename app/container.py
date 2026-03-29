@@ -11,6 +11,7 @@ from src.infrastructure.integrations.es_client import ElasticsearchClient
 from src.infrastructure.integrations.jwt_service import JWTService
 from src.infrastructure.integrations.openai_service import OpenAIService
 from src.application.modules.services import ModuleStatisticsService
+from src.infrastructure.integrations.airflow_client import AirflowClient
 
 
 class Container(containers.DeclarativeContainer):
@@ -19,6 +20,7 @@ class Container(containers.DeclarativeContainer):
             "src.presentation.depends.session",
             "src.presentation.depends.security",
             "src.presentation.depends.controllers",
+            "src.presentation.depends.integrations",
         ]
     )
 
@@ -86,6 +88,13 @@ class Container(containers.DeclarativeContainer):
     openai_service = providers.Factory(
         OpenAIService,
         OPENAI_API_KEY=settings.OPENAI_API_KEY,
+    )
+
+    airflow_client = providers.Factory(
+        AirflowClient,
+        base_url=settings.AIRFLOW_URL,
+        username=settings.AIRFLOW_USERNAME,
+        password=settings.AIRFLOW_PASSWORD,
     )
 
     module_statistics_service = providers.Factory(

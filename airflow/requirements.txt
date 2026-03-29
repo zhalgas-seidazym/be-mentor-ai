@@ -1,0 +1,6 @@
+apache-airflow-providers-postgres
+apache-airflow-providers-http
+apache-airflow-providers-fab
+psycopg2-binary
+beautifulsoup4
+httpx

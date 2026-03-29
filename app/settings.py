@@ -49,6 +49,11 @@ class Settings(BaseSettings):
     # ---- OpenAI ----
     OPENAI_API_KEY: str
 
+    # ---- AirFlow ----
+    AIRFLOW_URL: str
+    AIRFLOW_USERNAME: str
+    AIRFLOW_PASSWORD: str
+
 
     @property
     def db_url(self) -> str:

@@ -65,3 +65,14 @@ Thumbs.db
 .coverage
 pytest_cache/
 reports/
+
+# Airflow
+airflow/logs/
+airflow/.airflow/
+airflow/*.pid
+
+# Local data / volumes / temp
+*.sqlite
+*.db
+tmp/
+temp/
