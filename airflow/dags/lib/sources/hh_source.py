@@ -44,7 +44,7 @@ def _load_areas_tree(user_agent: str) -> list[dict[str, Any]]:
             "Accept": "application/json",
         },
     ) as client:
-        response = client.get("/areas")
+        response = client.get("/areas", params={"locale":"EN"})
         response.raise_for_status()
         return response.json()            
 
