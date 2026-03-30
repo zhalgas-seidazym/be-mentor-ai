@@ -4,11 +4,12 @@ import re
 import time
 from functools import lru_cache
 from typing import Any
-
+import logging
 import httpx
 
 
 BASE = "https://api.hh.ru"
+logger = logging.getLogger(__name__)
 
 
 def html_to_text(html: str | None) -> str | None:
@@ -79,10 +80,7 @@ def resolve_area_id(city_name: str, user_agent: str, override_area_id: int | Non
     if contains_match is not None:
         return contains_match
 
-    raise RuntimeError(
-        f"Could not resolve HH area_id for city_name='{city_name}'. "
-        "Add Airflow Variable HH_AREA_OVERRIDES_JSON for this city."
-    )
+    return None
 
 
 class HHApiClient:
@@ -221,6 +219,13 @@ def collect_hh_vacancies(
     )
 
     hh = HHApiClient(user_agent=user_agent)
+
+    if area_id is None:
+        logger.warning(
+            "Skipping HH vacancies collection for city '%s' because area_id could not be resolved",
+            city_name
+        )
+        return []
 
     out: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
