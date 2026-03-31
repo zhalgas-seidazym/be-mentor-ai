@@ -39,6 +39,8 @@ from src.application.vacancies.interfaces import (
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
 from src.presentation.depends.session import get_uow
+from src.infrastructure.integrations.airflow_client import AirflowClient
+from redis.asyncio import Redis
 
 
 @inject
@@ -48,6 +50,7 @@ async def get_auth_controller(
         oauth_service: IOAuthService = Depends(Provide[Container.oauth_service]),
         jwt_service: IJWTService = Depends(Provide[Container.jwt_service]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
+        airflow_client: AirflowClient = Depends(Provide[Container.airflow_client]),
         uow: IUoW = Depends(get_uow)
 ) -> IAuthController:
     return AuthController(
@@ -56,6 +59,7 @@ async def get_auth_controller(
         oauth_service=oauth_service,
         jwt_service=jwt_service,
         hash_service=hash_service,
+        airflow_client=airflow_client,
         uow=uow
     )
 
@@ -190,15 +194,20 @@ async def get_location_controller(
         city_repository=city_repository,
     )
 
+@inject
 async def get_vacancy_controller(
         vacancy_repository: IVacancyRepository = Depends(get_vacancy_repository),
         vacancy_skill_repository: IVacancySkillRepository = Depends(get_vacancy_skill_repository),
         user_vacancy_repository: IUserVacancyRepository = Depends(get_user_vacancy_repository),
+        airflow_client: AirflowClient = Depends(Provide[Container.airflow_client]),
+        redis: Redis = Depends(Provide[Container.redis]),
 ) -> IVacancyController:
     return VacancyController(
         vacancy_repository=vacancy_repository,
         vacancy_skill_repository=vacancy_skill_repository,
         user_vacancy_repository=user_vacancy_repository,
+        airflow_client=airflow_client,
+        redis=redis,
     )
 
 @inject

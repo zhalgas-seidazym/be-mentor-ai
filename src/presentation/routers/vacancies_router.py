@@ -1,6 +1,7 @@
-from typing import Annotated, List
+from typing import Annotated, Dict, List, Union
 
 from fastapi import APIRouter, Depends, Query, status as s
+from fastapi.responses import JSONResponse
 
 from src.application.vacancies.dtos import UserVacancyDTO, VacancyDTO, VacancySkillDTO
 from src.application.vacancies.interfaces import IVacancyController
@@ -20,11 +21,18 @@ router = APIRouter(
     "/my",
     summary="Get my vacancies",
     status_code=s.HTTP_200_OK,
-    response_model=List[UserVacancyDTO],
+    response_model=Union[List[UserVacancyDTO], Dict[str, Union[str, int]]],
     response_model_exclude_none=True,
     responses={
         s.HTTP_401_UNAUTHORIZED: RESPONSE_401,
-        s.HTTP_404_NOT_FOUND: RESPONSE_404,
+        s.HTTP_202_ACCEPTED: {
+            "description": "Vacancy search in progress",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Поиск вакансий уже идет", "retry_after": 600}
+                }
+            }
+        },
     },
 )
 async def get_my_vacancies(
@@ -32,10 +40,15 @@ async def get_my_vacancies(
     user: UserDTO = Depends(get_access_user),
     populate_vacancy: bool = Query(False),
 ):
-    return await controller.get_my_vacancies(
+    result = await controller.get_my_vacancies(
         user_id=user.id,
         populate_vacancy=populate_vacancy,
     )
+    if isinstance(result, dict):
+        retry_after = result.get("retry_after")
+        headers = {"Retry-After": str(retry_after)} if retry_after is not None else None
+        return JSONResponse(status_code=s.HTTP_202_ACCEPTED, content=result, headers=headers)
+    return result
 
 @router.get(
     "/{vacancy_id}",

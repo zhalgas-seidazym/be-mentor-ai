@@ -12,6 +12,7 @@ from src.application.users.auth.interfaces import (
 )
 from src.domain.interfaces import IUoW, IJWTService
 from src.domain.value_objects import TokenType
+from src.infrastructure.integrations.airflow_client import AirflowClient
 
 
 class AuthController(IAuthController):
@@ -23,6 +24,7 @@ class AuthController(IAuthController):
             hash_service: IHashService,
             oauth_service: IOAuthService,
             jwt_service: IJWTService,
+            airflow_client: AirflowClient,
     ):
         self._uow = uow
         self._user_repository = user_repository
@@ -30,6 +32,7 @@ class AuthController(IAuthController):
         self._hash_service = hash_service
         self._oauth_service = oauth_service
         self._jwt_service = jwt_service
+        self._airflow_client = airflow_client
 
     async def send_otp(self, email: str) -> Dict:
         await self._email_otp_service.send_otp(email)
@@ -51,6 +54,15 @@ class AuthController(IAuthController):
             created = await self._user_repository.add(
                 user_data
             )
+
+        try:
+            await self._airflow_client.trigger_dag(
+                dag_id="vacancy_pipeline_orchestrator_dag",
+                conf={"user_id": created.id},
+            )
+        except Exception:
+            # Best-effort: do not block registration if Airflow is down.
+            pass
 
         payload = {
             "user_id": created.id,
