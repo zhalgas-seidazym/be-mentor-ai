@@ -76,6 +76,7 @@ async def get_user_controller(
         interview_session_repository: IInterviewSessionRepository = Depends(get_interview_session_repository),
         interview_question_repository: IInterviewQuestionRepository = Depends(get_interview_question_repository),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
+        skill_search_service: ISkillSearchService = Depends(Provide[Container.skill_search_service]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
         uow: IUoW = Depends(get_uow)
 ) -> IUserController:
@@ -91,6 +92,7 @@ async def get_user_controller(
         city_repository=city_repository,
         direction_repository=direction_repository,
         openai_service=openai_service,
+        skill_search_service=skill_search_service,
         uow=uow,
     )
     return UserController(

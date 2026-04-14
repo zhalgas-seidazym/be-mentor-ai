@@ -22,7 +22,14 @@ docker-compose up --build -d
 docker-compose exec api alembic upgrade head
 ```
 
-4. Server runs inside Docker (no separate `uvicorn` needed).
+4. Seed reference data:
+
+```bash
+docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/locations.sql
+docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/skills.sql
+```
+
+5. Server runs inside Docker (no separate `uvicorn` needed).
 
 Next starts:
 
@@ -58,6 +65,17 @@ Apply:
 
 ```bash
 docker-compose exec api alembic upgrade head
+```
+
+## Seeders
+
+Reference SQL seed files live in `seeders/`.
+
+Run after migrations:
+
+```bash
+docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/locations.sql
+docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/skills.sql
 ```
 
 ## Notes

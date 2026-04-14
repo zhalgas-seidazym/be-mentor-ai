@@ -258,6 +258,18 @@ async def oauth_start(
     "/oauth/{provider}/callback",
     summary="OAuth callback",
     responses={
+        s.HTTP_200_OK: {
+            "description": "OAuth callback result (in url encode of redirect response)",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "OAuth authenticated successfully",
+                        "access_token": "token",
+                        "refresh_token": "token",
+                    }
+                }
+            },
+        },
         s.HTTP_302_FOUND: {
             "description": "Redirect to deep link with OAuth tokens",
             "headers": {

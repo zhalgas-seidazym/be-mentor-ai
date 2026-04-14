@@ -393,6 +393,7 @@ class OpenAIService:
             response = await self._client.audio.transcriptions.create(
                 model="whisper-1",
                 file=file_obj,
+                language="en",
             )
             text = getattr(response, "text", None)
             return text.strip() if isinstance(text, str) else ""

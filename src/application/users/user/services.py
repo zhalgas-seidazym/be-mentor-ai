@@ -9,7 +9,7 @@ from src.application.directions.interfaces import IDirectionRepository
 from src.application.questions.interfaces import IUserQuestionRepository
 from src.application.interview.interfaces import IInterviewSessionRepository, IInterviewQuestionRepository
 from src.application.skills.dtos import SkillDTO, UserSkillDTO
-from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository
+from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository, ISkillSearchService
 from src.application.questions.dtos import QuestionDTO
 from src.application.questions.interfaces import IQuestionRepository
 from src.application.directions.dtos import SalaryDTO, DirectionDTO
@@ -35,6 +35,7 @@ class UserService(IUserService):
         city_repository: ICityRepository,
         direction_repository: IDirectionRepository,
         openai_service: IOpenAIService,
+        skill_search_service: ISkillSearchService,
     ):
         self._uow = uow
         self._user_repository = user_repository
@@ -48,6 +49,7 @@ class UserService(IUserService):
         self._city_repository = city_repository
         self._direction_repository = direction_repository
         self._openai_service = openai_service
+        self._skill_search_service = skill_search_service
 
     async def get_theoretical_skills(
         self,
@@ -491,6 +493,7 @@ class UserService(IUserService):
         created_skill = await self._skill_repository.add(SkillDTO(name=skill_name))
         if not created_skill:
             return None, skill_name
+        await self._skill_search_service.index(skill_id=created_skill.id, name=created_skill.name)
         return created_skill.id, created_skill.name
 
     async def _seed_questions_if_needed(self, module_id: int, canonical_name: str) -> None:
