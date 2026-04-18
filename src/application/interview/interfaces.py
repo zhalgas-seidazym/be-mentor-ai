@@ -38,6 +38,9 @@ class IInterviewQuestionRepository(ABC):
     async def get_current_main(self, session_id: int, index: int) -> Optional[InterviewQuestionDTO]: ...
 
     @abstractmethod
+    async def get_latest_followup(self, session_id: int, main_question_id: int) -> Optional[InterviewQuestionDTO]: ...
+
+    @abstractmethod
     async def count_followups(self, session_id: int, main_question_id: int) -> int: ...
 
     @abstractmethod

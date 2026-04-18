@@ -85,6 +85,9 @@ class IUserVacancyRepository(ABC):
     @abstractmethod
     async def delete(self, user_id: int, vacancy_id: int) -> bool: ...
 
+    @abstractmethod
+    async def delete_by_user(self, user_id: int) -> int: ...
+
 
 class IVacancyController(ABC):
     @abstractmethod

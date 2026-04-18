@@ -350,16 +350,27 @@ class InterviewController(IInterviewController):
             iq.question_text = text
         return iq
 
+    async def _get_current_question_for_session(self, session: InterviewSessionDTO) -> Optional[InterviewQuestionDTO]:
+        current_main = await self._interview_question_repository.get_current_main(
+            session_id=session.id,
+            index=session.current_main_index or 1,
+        )
+        if current_main is None or current_main.id is None:
+            return current_main
+
+        latest_followup = await self._interview_question_repository.get_latest_followup(
+            session_id=session.id,
+            main_question_id=current_main.id,
+        )
+        return latest_followup or current_main
+
     async def get_session(self, session_id: int, user_id: int) -> Dict[str, Any]:
         # Validate session ownership
         session = await self._interview_session_repository.get_by_id(session_id)
         if session is None or session.user_id != user_id:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Interview session not found")
 
-        current_main = await self._interview_question_repository.get_current_main(
-            session_id=session.id,
-            index=session.current_main_index or 1,
-        )
+        current_question = await self._get_current_question_for_session(session)
 
         # Return minimal session state
         return {
@@ -367,7 +378,7 @@ class InterviewController(IInterviewController):
             "status": session.status,
             "current_main_index": session.current_main_index,
             "total_main_questions": session.total_main_questions,
-            "current_interview_question_id": current_main.id if current_main else None,
+            "current_interview_question_id": current_question.id if current_question else None,
         }
 
     async def get_active_session(self, user_id: int) -> Dict[str, Any]:
@@ -376,15 +387,12 @@ class InterviewController(IInterviewController):
         if session is None:
             raise HTTPException(status_code=s.HTTP_404_NOT_FOUND, detail="Active interview session not found")
 
-        current_main = await self._interview_question_repository.get_current_main(
-            session_id=session.id,
-            index=session.current_main_index or 1,
-        )
+        current_question = await self._get_current_question_for_session(session)
 
         return {
             "session_id": session.id,
             "status": session.status,
             "current_main_index": session.current_main_index,
             "total_main_questions": session.total_main_questions,
-            "current_interview_question_id": current_main.id if current_main else None,
+            "current_interview_question_id": current_question.id if current_question else None,
         }

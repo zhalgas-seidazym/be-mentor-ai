@@ -67,6 +67,7 @@ async def get_auth_controller(
 async def get_user_controller(
         user_repository: IUserRepository = Depends(get_user_repository),
         user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        user_vacancy_repository: IUserVacancyRepository = Depends(get_user_vacancy_repository),
         skill_repository: ISkillRepository = Depends(get_skill_repository),
         question_repository: IQuestionRepository = Depends(get_question_repository),
         direction_repository: IDirectionRepository = Depends(get_direction_repository),
@@ -77,6 +78,7 @@ async def get_user_controller(
         interview_question_repository: IInterviewQuestionRepository = Depends(get_interview_question_repository),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
         skill_search_service: ISkillSearchService = Depends(Provide[Container.skill_search_service]),
+        airflow_client: AirflowClient = Depends(Provide[Container.airflow_client]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
         uow: IUoW = Depends(get_uow)
 ) -> IUserController:
@@ -89,10 +91,12 @@ async def get_user_controller(
         interview_session_repository=interview_session_repository,
         interview_question_repository=interview_question_repository,
         salary_repository=salary_repository,
+        user_vacancy_repository=user_vacancy_repository,
         city_repository=city_repository,
         direction_repository=direction_repository,
         openai_service=openai_service,
         skill_search_service=skill_search_service,
+        airflow_client=airflow_client,
         uow=uow,
     )
     return UserController(
