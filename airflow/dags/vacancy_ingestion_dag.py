@@ -22,18 +22,17 @@ from lib.vacancy_repository import (
 DAG_ID = "vacancy_ingestion_dag"
 POSTGRES_CONN_ID = os.getenv("POSTGRES_CONN_ID", "mentorai_db")
 
-HH_MAX_JOBS_PER_TARGET = int(os.getenv("HH_MAX_JOBS_PER_TARGET", "120"))
-HH_PER_PAGE = int(os.getenv("HH_PER_PAGE", "100"))
-HH_MAX_PAGES = int(os.getenv("HH_MAX_PAGES", "5"))
+HH_MAX_JOBS_PER_TARGET = int(os.getenv("HH_MAX_JOBS_PER_TARGET", "60"))
+HH_PER_PAGE = int(os.getenv("HH_PER_PAGE", "30"))
+HH_MAX_PAGES = int(os.getenv("HH_MAX_PAGES", "3"))
 HH_ONLY_WITH_SALARY = os.getenv("HH_ONLY_WITH_SALARY", "false").lower() == "true"
+HH_USER_AGENT = os.getenv(
+    "MENTORAI_HH_USER_AGENT",
+    "MentorAI-StudentResearchBot/1.0 (email: saidshabekov@gmail.com)",
+)
 
 ENABLE_PARSER_SOURCE = os.getenv("MENTORAI_ENABLE_PARSER_SOURCE", "false").lower() == "true"
 PARSER_MAX_JOBS_PER_TARGET = int(os.getenv("PARSER_MAX_JOBS_PER_TARGET", "40"))
-
-HH_USER_AGENT = os.getenv(
-    "MENTORAI_HH_USER_AGENT",
-    "MentorAI-AirflowBot/1.0 (contact: mentorai@example.com)",
-)
 
 
 @dag(
@@ -77,7 +76,10 @@ def vacancy_ingestion_dag():
             user_id=conf["user_id"],
         )
 
-    @task
+    @task(
+        pool="hh_api_pool",
+        max_active_tis_per_dag=1,
+    )
     def ingest_target(target: dict[str, Any]) -> dict[str, Any]:
         context = get_current_context()
         dag_run = context.get("dag_run")
