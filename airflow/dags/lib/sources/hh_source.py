@@ -10,12 +10,13 @@ import httpx
 from lib.sources.hh_auth import ensure_hh_access_token, HHAuthError
 
 
+
+
 logger = logging.getLogger(__name__)
 
 HH_BASE_URL = "https://api.hh.ru"
 HH_REQUEST_DELAY_SECONDS = float(os.getenv("HH_REQUEST_DELAY_SECONDS", "1.2"))
 HH_DETAIL_DELAY_SECONDS = float(os.getenv("HH_DETAIL_DELAY_SECONDS", "0.8"))
-HH_ACCESS_TOKEN = os.getenv("HH_ACCESS_TOKEN")
 
 
 class HHForbiddenError(RuntimeError):
@@ -232,6 +233,7 @@ def collect_hh_vacancies(
     max_pages: int = 3,
     only_with_salary: bool = False,
 ) -> list[dict[str, Any]]:
+    
     try:
         access_token = ensure_hh_access_token(user_agent=user_agent)
     except HHAuthError as e:

@@ -4,7 +4,7 @@ import os
 from typing import Any
 
 import httpx
-from airflow.models import Variable
+from airflow.sdk import Variable
 
 
 HH_OAUTH_BASE_URL = "https://hh.ru"
@@ -12,6 +12,9 @@ HH_API_BASE_URL = "https://api.hh.ru"
 
 HH_CLIENT_ID = os.getenv("HH_CLIENT_ID")
 HH_CLIENT_SECRET = os.getenv("HH_CLIENT_SECRET")
+
+HH_ACCESS_TOKEN_ENV = os.getenv("HH_ACCESS_TOKEN")
+HH_REFRESH_TOKEN_ENV = os.getenv("HH_REFRESH_TOKEN")
 
 HH_ACCESS_TOKEN_VAR = "HH_ACCESS_TOKEN"
 HH_REFRESH_TOKEN_VAR = "HH_REFRESH_TOKEN"
@@ -22,7 +25,7 @@ class HHAuthError(RuntimeError):
 
 
 def _get_variable(name: str) -> str | None:
-    value = Variable.get(name, default_var=None)
+    value = Variable.get(name, default=None)
     if value:
         value = str(value).strip()
     return value or None
@@ -33,16 +36,16 @@ def _set_variable(name: str, value: str) -> None:
 
 
 def get_current_hh_tokens() -> dict[str, str | None]:
+    access_token = _get_variable(HH_ACCESS_TOKEN_VAR) or HH_ACCESS_TOKEN_ENV
+    refresh_token = _get_variable(HH_REFRESH_TOKEN_VAR) or HH_REFRESH_TOKEN_ENV
+
     return {
-        "access_token": _get_variable(HH_ACCESS_TOKEN_VAR),
-        "refresh_token": _get_variable(HH_REFRESH_TOKEN_VAR),
+        "access_token": access_token,
+        "refresh_token": refresh_token,
     }
 
 
 def verify_access_token(access_token: str, user_agent: str) -> bool:
-    """
-    Проверяем токен через /me, как рекомендует HH docs.
-    """
     headers = {
         "Authorization": f"Bearer {access_token}",
         "User-Agent": user_agent,
@@ -63,10 +66,6 @@ def verify_access_token(access_token: str, user_agent: str) -> bool:
 
 
 def refresh_access_token(refresh_token: str) -> dict[str, str]:
-    """
-    Получаем новую пару access_token + refresh_token.
-    Вызывать только когда старый access token отсутствует или уже невалиден.
-    """
     if not HH_CLIENT_ID or not HH_CLIENT_SECRET:
         raise HHAuthError("HH_CLIENT_ID / HH_CLIENT_SECRET are not configured")
 
@@ -78,9 +77,7 @@ def refresh_access_token(refresh_token: str) -> dict[str, str]:
             "client_id": HH_CLIENT_ID,
             "client_secret": HH_CLIENT_SECRET,
         },
-        headers={
-            "Accept": "application/json",
-        },
+        headers={"Accept": "application/json"},
         timeout=30.0,
         follow_redirects=True,
     )
@@ -91,7 +88,6 @@ def refresh_access_token(refresh_token: str) -> dict[str, str]:
         )
 
     payload: dict[str, Any] = response.json()
-
     access_token = str(payload.get("access_token") or "").strip()
     new_refresh_token = str(payload.get("refresh_token") or "").strip()
 
@@ -108,12 +104,6 @@ def refresh_access_token(refresh_token: str) -> dict[str, str]:
 
 
 def ensure_hh_access_token(user_agent: str) -> str:
-    """
-    Логика:
-    1. если access token есть и он живой -> используем его
-    2. если access token нет/невалиден, но есть refresh token -> обновляем
-    3. если нет ни access, ни refresh -> кидаем понятную ошибку
-    """
     tokens = get_current_hh_tokens()
     access_token = tokens["access_token"]
     refresh_token = tokens["refresh_token"]
