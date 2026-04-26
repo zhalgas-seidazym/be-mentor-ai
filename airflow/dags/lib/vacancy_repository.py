@@ -15,6 +15,7 @@ def now_utc() -> datetime:
 def target_has_vacancies(postgres_conn_id: str, direction_id: int, city_id: int) -> bool:
     hook = PostgresHook(postgres_conn_id=postgres_conn_id)
     conn = hook.get_conn()
+
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -35,6 +36,10 @@ def target_has_vacancies(postgres_conn_id: str, direction_id: int, city_id: int)
 
 
 def truncate_vacancy_data(postgres_conn_id: str) -> None:
+    """
+    Hard full truncate. Kept for emergency/manual maintenance only.
+    The scheduled DAG should not call this before successful HH collection.
+    """
     hook = PostgresHook(postgres_conn_id=postgres_conn_id)
     conn = hook.get_conn()
 
@@ -50,6 +55,72 @@ def truncate_vacancy_data(postgres_conn_id: str) -> None:
                 """
             )
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def delete_target_vacancy_data(
+    postgres_conn_id: str,
+    direction_id: int,
+    city_id: int,
+) -> dict[str, int]:
+    """
+    Delete vacancies only for one target pair after new data was collected successfully.
+    This prevents a failed HH request from wiping all previously collected vacancies.
+    """
+    hook = PostgresHook(postgres_conn_id=postgres_conn_id)
+    conn = hook.get_conn()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM public.user_vacancies
+                WHERE vacancy_id IN (
+                    SELECT id
+                    FROM public.vacancies
+                    WHERE direction_id = %s
+                      AND city_id = %s
+                )
+                """,
+                (direction_id, city_id),
+            )
+            user_vacancies_deleted = cur.rowcount
+
+            cur.execute(
+                """
+                DELETE FROM public.vacancy_skills
+                WHERE vacancy_id IN (
+                    SELECT id
+                    FROM public.vacancies
+                    WHERE direction_id = %s
+                      AND city_id = %s
+                )
+                """,
+                (direction_id, city_id),
+            )
+            vacancy_skills_deleted = cur.rowcount
+
+            cur.execute(
+                """
+                DELETE FROM public.vacancies
+                WHERE direction_id = %s
+                  AND city_id = %s
+                """,
+                (direction_id, city_id),
+            )
+            vacancies_deleted = cur.rowcount
+
+        conn.commit()
+
+        return {
+            "user_vacancies_deleted": user_vacancies_deleted,
+            "vacancy_skills_deleted": vacancy_skills_deleted,
+            "vacancies_deleted": vacancies_deleted,
+        }
     except Exception:
         conn.rollback()
         raise
@@ -103,7 +174,7 @@ def insert_vacancies_and_relations(
                 city_id = vacancy.get("city_id")
                 vacancy_type = vacancy.get("vacancy_type") or "OFFLINE"
 
-                if not title or not url:
+                if not title or not url or not direction_id or not city_id:
                     continue
 
                 cur.execute(
@@ -134,6 +205,7 @@ def insert_vacancies_and_relations(
                         now_utc(),
                     ),
                 )
+
                 vacancy_id = int(cur.fetchone()[0])
                 inserted_vacancies += 1
 
@@ -141,10 +213,12 @@ def insert_vacancies_and_relations(
 
                 for skill_name in vacancy.get("skills", []):
                     normalized = normalize_skill_name(skill_name)
+
                     if not normalized:
                         continue
 
                     skill_id = skill_id_by_normalized.get(normalized)
+
                     if skill_id is None:
                         cur.execute(
                             """
@@ -160,6 +234,7 @@ def insert_vacancies_and_relations(
 
                     if skill_id in seen_skill_ids:
                         continue
+
                     seen_skill_ids.add(skill_id)
 
                     cur.execute(
@@ -179,7 +254,6 @@ def insert_vacancies_and_relations(
             "skills_inserted": inserted_skills,
             "vacancy_skills_inserted": inserted_relations,
         }
-
     except Exception:
         conn.rollback()
         raise

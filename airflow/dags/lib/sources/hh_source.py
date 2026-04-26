@@ -7,19 +7,22 @@ import time
 from typing import Any
 
 import httpx
-from lib.sources.hh_auth import ensure_hh_access_token, HHAuthError
 
-
-
+from lib.sources.hh_auth import HHAuthError, get_hh_app_access_token
 
 logger = logging.getLogger(__name__)
 
 HH_BASE_URL = "https://api.hh.ru"
 HH_REQUEST_DELAY_SECONDS = float(os.getenv("HH_REQUEST_DELAY_SECONDS", "1.2"))
 HH_DETAIL_DELAY_SECONDS = float(os.getenv("HH_DETAIL_DELAY_SECONDS", "0.8"))
+HH_AREAS_CACHE_TTL_SECONDS = int(os.getenv("HH_AREAS_CACHE_TTL_SECONDS", "86400"))
 
 
 class HHForbiddenError(RuntimeError):
+    pass
+
+
+class HHCaptchaRequiredError(RuntimeError):
     pass
 
 
@@ -30,6 +33,12 @@ class HHApiClient:
         access_token: str | None = None,
         max_retries: int = 3,
     ) -> None:
+        if not user_agent or "your_email@example.com" in user_agent:
+            raise ValueError(
+                "MENTORAI_HH_USER_AGENT must contain a real contact email, "
+                "not the placeholder value."
+            )
+
         self.user_agent = user_agent
         self.access_token = access_token
         self.max_retries = max_retries
@@ -54,50 +63,91 @@ class HHApiClient:
         jitter = random.uniform(0.0, 0.35)
         time.sleep(base_delay + jitter)
 
+    def _raise_hh_error(
+        self,
+        response: httpx.Response,
+        path: str,
+        params: dict[str, Any] | None,
+    ) -> None:
+        request_id = response.headers.get("x-request-id")
+
+        try:
+            payload = response.json()
+        except Exception:
+            payload = {}
+
+        if isinstance(payload, dict):
+            request_id = request_id or payload.get("request_id")
+            errors = payload.get("errors") or []
+        else:
+            errors = []
+
+        first_error = errors[0] if errors and isinstance(errors[0], dict) else {}
+        error_type = first_error.get("type")
+        error_value = first_error.get("value")
+
+        message = (
+            "HH API error: "
+            f"status={response.status_code}, path={path}, params={params}, "
+            f"request_id={request_id}, error_type={error_type}, "
+            f"error_value={error_value}, response_body={response.text}"
+        )
+
+        logger.error(message)
+
+        if error_type == "captcha_required":
+            raise HHCaptchaRequiredError(message)
+
+        if error_type == "oauth" or response.status_code == 401:
+            raise HHAuthError(message)
+
+        if response.status_code == 403:
+            raise HHForbiddenError(message)
+
+        raise RuntimeError(message)
+
     def _get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         last_err: Exception | None = None
-        last_text: str | None = None
-        last_status_code: int | None = None
 
         for attempt in range(1, self.max_retries + 1):
             try:
                 response = self.client.get(path, params=params)
-                last_status_code = response.status_code
 
                 if response.status_code >= 400:
-                    last_text = response.text
+                    self._raise_hh_error(response=response, path=path, params=params)
 
-                response.raise_for_status()
-                return response.json()
+                payload = response.json()
+                if not isinstance(payload, dict):
+                    raise RuntimeError(
+                        f"Unexpected HH response type for path={path}: {type(payload)}"
+                    )
 
-            except httpx.HTTPStatusError as exc:
+                return payload
+
+            except (HHAuthError, HHForbiddenError, HHCaptchaRequiredError):
+                raise
+            except httpx.RequestError as exc:
                 last_err = exc
-                last_status_code = exc.response.status_code
-                last_text = exc.response.text
-
-                if exc.response.status_code == 403:
-                    raise HHForbiddenError(
-                        f"HH returned 403 Forbidden: path={path} params={params} response_body={last_text}"
-                    ) from exc
-
-                # 4xx кроме 403 не ретраим много раз
-                if 400 <= exc.response.status_code < 500:
-                    break
-
+            except RuntimeError as exc:
+                last_err = exc
+                break
             except Exception as exc:
                 last_err = exc
 
             self._sleep(0.8 * attempt)
 
-        raise RuntimeError(
-            f"GET failed: path={path} params={params} err={last_err} "
-            f"response_body={last_text} status_code={last_status_code}"
-        )
+        raise RuntimeError(f"GET failed: path={path} params={params} err={last_err}")
 
     def get_areas(self, locale: str = "EN") -> list[dict[str, Any]]:
-        data = self._get("/areas", params={"locale": locale})
+        response = self.client.get("/areas", params={"locale": locale})
+
+        if response.status_code >= 400:
+            self._raise_hh_error(response=response, path="/areas", params={"locale": locale})
+
+        data = response.json()
         if not isinstance(data, list):
             raise RuntimeError(f"Unexpected /areas response type: {type(data)}")
+
         return data
 
     def search_vacancies(
@@ -114,6 +164,7 @@ class HHApiClient:
             "page": page,
             "per_page": per_page,
         }
+
         if only_with_salary:
             params["only_with_salary"] = True
 
@@ -129,7 +180,6 @@ _AREAS_CACHE: dict[str, Any] = {
     "fetched_at": 0.0,
     "areas": None,
 }
-HH_AREAS_CACHE_TTL_SECONDS = int(os.getenv("HH_AREAS_CACHE_TTL_SECONDS", "86400"))
 
 
 def _walk_areas(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -159,6 +209,7 @@ def _load_areas_cached(client: HHApiClient, locale: str = "EN") -> list[dict[str
 
     _AREAS_CACHE["areas"] = flattened
     _AREAS_CACHE["fetched_at"] = now_ts
+
     return flattened
 
 
@@ -188,8 +239,10 @@ def _extract_salary_amount_and_currency(vacancy: dict[str, Any]) -> tuple[float 
 
     if salary_from is not None and salary_to is not None:
         return float(salary_from + salary_to) / 2.0, currency
+
     if salary_from is not None:
         return float(salary_from), currency
+
     if salary_to is not None:
         return float(salary_to), currency
 
@@ -227,22 +280,18 @@ def collect_hh_vacancies(
     direction_name: str,
     city_name: str,
     user_agent: str,
+    app_access_token: str | None = None,
     area_override: int | None = None,
     limit_total: int = 60,
     per_page: int = 30,
     max_pages: int = 3,
     only_with_salary: bool = False,
 ) -> list[dict[str, Any]]:
-    
-    try:
-        access_token = ensure_hh_access_token(user_agent=user_agent)
-    except HHAuthError as e:
-        logger.warning("Skipping HH vacancy collection due to auth problem: %s", e)
-        return []
+    access_token = app_access_token or get_hh_app_access_token()
 
     hh = HHApiClient(
         user_agent=user_agent,
-        access_token=None,
+        access_token=access_token,
     )
 
     area_id = area_override
@@ -253,34 +302,23 @@ def collect_hh_vacancies(
         )
 
     if area_id is None:
-        logger.warning(
-            "Skipping HH vacancy collection because city was not found in HH areas: city_name=%s, direction_name=%s",
-            city_name,
-            direction_name,
+        raise RuntimeError(
+            "HH area id was not resolved. "
+            f"city_name={city_name!r}, direction_name={direction_name!r}. "
+            "Set HH_AREA_OVERRIDES_JSON or store HH area id for this city."
         )
-        return []
 
     jobs: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
 
     for page in range(max_pages):
-        try:
-            search = hh.search_vacancies(
-                text=direction_name,
-                area=area_id,
-                page=page,
-                per_page=per_page,
-                only_with_salary=only_with_salary,
-            )
-        except HHForbiddenError as e:
-            logger.warning(
-                "Skipping HH vacancy collection due to 403 Forbidden: city_name=%s, direction_name=%s, area_id=%s, err=%s",
-                city_name,
-                direction_name,
-                area_id,
-                e,
-            )
-            return []
+        search = hh.search_vacancies(
+            text=direction_name,
+            area=int(area_id),
+            page=page,
+            per_page=per_page,
+            only_with_salary=only_with_salary,
+        )
 
         items = search.get("items") or []
         if not items:
@@ -288,26 +326,22 @@ def collect_hh_vacancies(
 
         for item in items:
             vacancy_id = str(item.get("id") or "")
+
             if not vacancy_id or vacancy_id in seen_ids:
                 continue
+
             seen_ids.add(vacancy_id)
 
-            # Не валим target, если detail конкретной вакансии недоступен
             try:
                 detail = hh.get_vacancy(vacancy_id)
                 jobs.append(extract_job_from_detail(detail))
-            except HHForbiddenError as e:
-                logger.warning(
-                    "Skipping HH vacancy detail due to 403 Forbidden: vacancy_id=%s, err=%s",
-                    vacancy_id,
-                    e,
-                )
-                continue
-            except Exception as e:
+            except (HHAuthError, HHForbiddenError, HHCaptchaRequiredError):
+                raise
+            except Exception as exc:
                 logger.warning(
                     "Skipping HH vacancy detail: vacancy_id=%s err=%s",
                     vacancy_id,
-                    e,
+                    exc,
                 )
                 continue
 
