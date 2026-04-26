@@ -1,141 +1,161 @@
 from __future__ import annotations
 
-import re
-import time
-from functools import lru_cache
-from typing import Any
 import logging
+import os
+import random
+import time
+from typing import Any
+
 import httpx
 
+from lib.sources.hh_auth import HHAuthError, get_hh_app_access_token
 
-BASE = "https://api.hh.ru"
 logger = logging.getLogger(__name__)
 
-
-def html_to_text(html: str | None) -> str | None:
-    if not html:
-        return None
-    text = re.sub(r"<br\s*/?>", "\n", html, flags=re.I)
-    text = re.sub(r"</p\s*>", "\n", text, flags=re.I)
-    text = re.sub(r"<[^>]+>", "", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    return text.strip() or None
+HH_BASE_URL = "https://api.hh.ru"
+HH_REQUEST_DELAY_SECONDS = float(os.getenv("HH_REQUEST_DELAY_SECONDS", "1.2"))
+HH_DETAIL_DELAY_SECONDS = float(os.getenv("HH_DETAIL_DELAY_SECONDS", "0.8"))
+HH_AREAS_CACHE_TTL_SECONDS = int(os.getenv("HH_AREAS_CACHE_TTL_SECONDS", "86400"))
 
 
-def _norm_city(value: str) -> str:
-    return " ".join(value.strip().lower().replace("-", " ").split())
+class HHForbiddenError(RuntimeError):
+    pass
 
 
-def _iter_areas(nodes: list[dict[str, Any]]):
-    for node in nodes:
-        yield node
-        children = node.get("areas") or []
-        if children:
-            yield from _iter_areas(children)
-
-
-@lru_cache(maxsize=1)
-def _load_areas_tree(user_agent: str) -> list[dict[str, Any]]:
-    with httpx.Client(
-        base_url=BASE,
-        timeout=30,
-        headers={
-            "User-Agent": user_agent,
-            "HH-User-Agent": user_agent,
-            "Accept": "application/json",
-        },
-    ) as client:
-        response = client.get("/areas", params={"locale":"EN"})
-        response.raise_for_status()
-        return response.json()            
-
-
-def resolve_area_id(city_name: str, user_agent: str, override_area_id: int | None = None) -> int:
-    if override_area_id is not None:
-        return int(override_area_id)
-
-    normalized_city = _norm_city(city_name)
-    areas = _load_areas_tree(user_agent)
-
-    exact_match: int | None = None
-    contains_match: int | None = None
-
-    for node in _iter_areas(areas):
-        name = node.get("name")
-        area_id = node.get("id")
-        if not name or area_id is None:
-            continue
-
-        normalized_name = _norm_city(name)
-
-        if normalized_name == normalized_city:
-            exact_match = int(area_id)
-            break
-
-        if normalized_city in normalized_name and contains_match is None:
-            contains_match = int(area_id)
-
-    if exact_match is not None:
-        return exact_match
-    if contains_match is not None:
-        return contains_match
-
-    return None
+class HHCaptchaRequiredError(RuntimeError):
+    pass
 
 
 class HHApiClient:
     def __init__(
         self,
         user_agent: str,
-        timeout: float = 25.0,
-        min_delay: float = 0.4,
-        max_delay: float = 0.9,
+        access_token: str | None = None,
         max_retries: int = 3,
     ) -> None:
-        self.min_delay = min_delay
-        self.max_delay = max_delay
+        if not user_agent or "your_email@example.com" in user_agent:
+            raise ValueError(
+                "MENTORAI_HH_USER_AGENT must contain a real contact email, "
+                "not the placeholder value."
+            )
+
+        self.user_agent = user_agent
+        self.access_token = access_token
         self.max_retries = max_retries
+
+        headers = {
+            "User-Agent": user_agent,
+            "HH-User-Agent": user_agent,
+            "Accept": "application/json",
+        }
+
+        if access_token:
+            headers["Authorization"] = f"Bearer {access_token}"
+
         self.client = httpx.Client(
-            base_url=BASE,
-            timeout=timeout,
-            headers={
-                "User-Agent": user_agent,
-                "HH-User-Agent": user_agent,
-                "Accept": "application/json",
-            },
+            base_url=HH_BASE_URL,
+            timeout=30.0,
+            follow_redirects=True,
+            headers=headers,
         )
 
+    def _sleep(self, base_delay: float) -> None:
+        jitter = random.uniform(0.0, 0.35)
+        time.sleep(base_delay + jitter)
 
-    def _sleep(self) -> None:
-        time.sleep((self.min_delay + self.max_delay) / 2.0)
-    
+    def _raise_hh_error(
+        self,
+        response: httpx.Response,
+        path: str,
+        params: dict[str, Any] | None,
+    ) -> None:
+        request_id = response.headers.get("x-request-id")
+
+        try:
+            payload = response.json()
+        except Exception:
+            payload = {}
+
+        if isinstance(payload, dict):
+            request_id = request_id or payload.get("request_id")
+            errors = payload.get("errors") or []
+        else:
+            errors = []
+
+        first_error = errors[0] if errors and isinstance(errors[0], dict) else {}
+        error_type = first_error.get("type")
+        error_value = first_error.get("value")
+
+        message = (
+            "HH API error: "
+            f"status={response.status_code}, path={path}, params={params}, "
+            f"request_id={request_id}, error_type={error_type}, "
+            f"error_value={error_value}, response_body={response.text}"
+        )
+
+        logger.error(message)
+
+        if error_type == "captcha_required":
+            raise HHCaptchaRequiredError(message)
+
+        if error_type == "oauth" or response.status_code == 401:
+            raise HHAuthError(message)
+
+        if response.status_code == 403:
+            raise HHForbiddenError(message)
+
+        raise RuntimeError(message)
 
     def _get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         last_err: Exception | None = None
-        last_text: str | None = None
 
         for attempt in range(1, self.max_retries + 1):
             try:
                 response = self.client.get(path, params=params)
+
                 if response.status_code >= 400:
-                    last_text = response.text
-                response.raise_for_status()
-                return response.json()
+                    self._raise_hh_error(response=response, path=path, params=params)
+
+                payload = response.json()
+                if not isinstance(payload, dict):
+                    raise RuntimeError(
+                        f"Unexpected HH response type for path={path}: {type(payload)}"
+                    )
+
+                return payload
+
+            except (HHAuthError, HHForbiddenError, HHCaptchaRequiredError):
+                raise
+            except httpx.RequestError as exc:
+                last_err = exc
+            except RuntimeError as exc:
+                last_err = exc
+                break
             except Exception as exc:
                 last_err = exc
-                time.sleep(0.8 * attempt)
 
-        raise RuntimeError(
-            f"GET failed: path={path} params={params} err={last_err} response_body={last_text}"
-        )
+            self._sleep(0.8 * attempt)
 
+        raise RuntimeError(f"GET failed: path={path} params={params} err={last_err}")
+
+    def get_areas(self, locale: str = "EN") -> list[dict[str, Any]]:
+        response = self.client.get("/areas", params={"locale": locale})
+
+        if response.status_code >= 400:
+            self._raise_hh_error(response=response, path="/areas", params={"locale": locale})
+
+        data = response.json()
+        if not isinstance(data, list):
+            raise RuntimeError(f"Unexpected /areas response type: {type(data)}")
+
+        return data
 
     def search_vacancies(
         self,
         text: str,
         area: int,
-        page: int = 0,
-        per_page: int = 100,
+        page: int,
+        per_page: int,
         only_with_salary: bool = False,
     ) -> dict[str, Any]:
         params: dict[str, Any] = {
@@ -144,61 +164,115 @@ class HHApiClient:
             "page": page,
             "per_page": per_page,
         }
+
         if only_with_salary:
             params["only_with_salary"] = True
 
-        data = self._get("/vacancies", params=params)
-        self._sleep()
-        return data
+        self._sleep(HH_REQUEST_DELAY_SECONDS)
+        return self._get("/vacancies", params=params)
 
     def get_vacancy(self, vacancy_id: str) -> dict[str, Any]:
-        data = self._get(f"/vacancies/{vacancy_id}")
-        self._sleep()
-        return data
+        self._sleep(HH_DETAIL_DELAY_SECONDS)
+        return self._get(f"/vacancies/{vacancy_id}")
 
 
-def map_hh_detail_to_record(detail: dict[str, Any]) -> dict[str, Any]:
-    vacancy_id = str(detail.get("id"))
-    url = detail.get("alternate_url") or detail.get("url") or f"{BASE}/vacancies/{vacancy_id}"
+_AREAS_CACHE: dict[str, Any] = {
+    "fetched_at": 0.0,
+    "areas": None,
+}
 
-    employer = detail.get("employer") or {}
-    company = employer.get("name")
 
-    area = detail.get("area") or {}
-    area_name = area.get("name")
+def _walk_areas(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
 
-    address = detail.get("address") or {}
-    city = address.get("city")
+    def dfs(items: list[dict[str, Any]]) -> None:
+        for item in items:
+            result.append(item)
+            children = item.get("areas") or []
+            if children:
+                dfs(children)
 
-    if city and area_name and city != area_name:
-        location = f"{city}, {area_name}"
-    else:
-        location = area_name or city
+    dfs(nodes)
+    return result
 
-    salary = detail.get("salary") or {}
 
-    skills: list[str] = []
-    for skill in detail.get("key_skills") or []:
-        name = (skill or {}).get("name")
+def _load_areas_cached(client: HHApiClient, locale: str = "EN") -> list[dict[str, Any]]:
+    now_ts = time.time()
+    cached = _AREAS_CACHE.get("areas")
+    fetched_at = float(_AREAS_CACHE.get("fetched_at") or 0.0)
+
+    if cached and now_ts - fetched_at < HH_AREAS_CACHE_TTL_SECONDS:
+        return cached
+
+    areas = client.get_areas(locale=locale)
+    flattened = _walk_areas(areas)
+
+    _AREAS_CACHE["areas"] = flattened
+    _AREAS_CACHE["fetched_at"] = now_ts
+
+    return flattened
+
+
+def _resolve_area_id_by_city_name(
+    client: HHApiClient,
+    city_name: str,
+) -> int | None:
+    city_name_norm = city_name.strip().lower()
+    areas = _load_areas_cached(client=client, locale="EN")
+
+    for area in areas:
+        name = str(area.get("name") or "").strip().lower()
+        if name == city_name_norm:
+            return int(area["id"])
+
+    return None
+
+
+def _extract_salary_amount_and_currency(vacancy: dict[str, Any]) -> tuple[float | None, str | None]:
+    salary = vacancy.get("salary")
+    if not salary:
+        return None, None
+
+    salary_from = salary.get("from")
+    salary_to = salary.get("to")
+    currency = salary.get("currency")
+
+    if salary_from is not None and salary_to is not None:
+        return float(salary_from + salary_to) / 2.0, currency
+
+    if salary_from is not None:
+        return float(salary_from), currency
+
+    if salary_to is not None:
+        return float(salary_to), currency
+
+    return None, currency
+
+
+def _extract_skills_from_vacancy_detail(vacancy_detail: dict[str, Any]) -> list[str]:
+    skills = vacancy_detail.get("key_skills") or []
+    result: list[str] = []
+
+    for skill in skills:
+        name = str(skill.get("name") or "").strip()
         if name:
-            skills.append(name)
+            result.append(name)
+
+    return result
+
+
+def extract_job_from_detail(vacancy_detail: dict[str, Any]) -> dict[str, Any]:
+    salary_amount, salary_currency = _extract_salary_amount_and_currency(vacancy_detail)
 
     return {
         "source": "hh",
-        "external_id": vacancy_id,
-        "title": detail.get("name"),
-        "company": company,
-        "location": location,
-        "description": html_to_text(detail.get("description")),
-        "url": url,
-        "posted_at": detail.get("published_at"),
-        "fetched_at": None,
-        "salary_from": salary.get("from"),
-        "salary_to": salary.get("to"),
-        "currency": salary.get("currency"),
-        "salary_text": None,
-        "skills": skills,
-        "raw_payload": detail,
+        "external_id": str(vacancy_detail.get("id") or ""),
+        "title": vacancy_detail.get("name"),
+        "url": vacancy_detail.get("alternate_url"),
+        "description": (vacancy_detail.get("description") or "")[:10000],
+        "salary_amount": salary_amount,
+        "currency": salary_currency,
+        "skills": _extract_skills_from_vacancy_detail(vacancy_detail),
     }
 
 
@@ -206,34 +280,41 @@ def collect_hh_vacancies(
     direction_name: str,
     city_name: str,
     user_agent: str,
+    app_access_token: str | None = None,
     area_override: int | None = None,
-    limit_total: int = 200,
-    per_page: int = 100,
-    max_pages: int = 10,
+    limit_total: int = 60,
+    per_page: int = 30,
+    max_pages: int = 3,
     only_with_salary: bool = False,
 ) -> list[dict[str, Any]]:
-    area_id = resolve_area_id(
-        city_name=city_name,
+    access_token = app_access_token or get_hh_app_access_token()
+
+    hh = HHApiClient(
         user_agent=user_agent,
-        override_area_id=area_override,
+        access_token=access_token,
     )
 
-    hh = HHApiClient(user_agent=user_agent)
+    area_id = area_override
+    if area_id is None:
+        area_id = _resolve_area_id_by_city_name(
+            client=hh,
+            city_name=city_name,
+        )
 
     if area_id is None:
-        logger.warning(
-            "Skipping HH vacancies collection for city '%s' because area_id could not be resolved",
-            city_name
+        raise RuntimeError(
+            "HH area id was not resolved. "
+            f"city_name={city_name!r}, direction_name={direction_name!r}. "
+            "Set HH_AREA_OVERRIDES_JSON or store HH area id for this city."
         )
-        return []
 
-    out: list[dict[str, Any]] = []
+    jobs: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
 
     for page in range(max_pages):
         search = hh.search_vacancies(
             text=direction_name,
-            area=area_id,
+            area=int(area_id),
             page=page,
             per_page=per_page,
             only_with_salary=only_with_salary,
@@ -244,7 +325,8 @@ def collect_hh_vacancies(
             break
 
         for item in items:
-            vacancy_id = str(item.get("id"))
+            vacancy_id = str(item.get("id") or "")
+
             if not vacancy_id or vacancy_id in seen_ids:
                 continue
 
@@ -252,15 +334,25 @@ def collect_hh_vacancies(
 
             try:
                 detail = hh.get_vacancy(vacancy_id)
-                out.append(map_hh_detail_to_record(detail))
-            except Exception:
+                jobs.append(extract_job_from_detail(detail))
+            except (HHAuthError, HHForbiddenError, HHCaptchaRequiredError):
+                raise
+            except Exception as exc:
+                logger.warning(
+                    "Skipping HH vacancy detail: vacancy_id=%s err=%s",
+                    vacancy_id,
+                    exc,
+                )
                 continue
 
-            if len(out) >= limit_total:
-                return out
+            if len(jobs) >= limit_total:
+                break
 
-        pages = search.get("pages")
-        if pages is not None and page >= int(pages) - 1:
+        if len(jobs) >= limit_total:
             break
 
-    return out
+        pages_total = search.get("pages")
+        if pages_total is not None and page >= int(pages_total) - 1:
+            break
+
+    return jobs

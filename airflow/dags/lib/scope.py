@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from airflow.models import Variable
+from airflow.sdk import Variable
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
@@ -21,7 +21,7 @@ class TargetScope:
 
 
 def _load_json_variable(key: str, default: Any) -> Any:
-    raw = Variable.get(key, default_var=None)
+    raw = Variable.get(key, default=None)
     if not raw:
         return default
     try:
