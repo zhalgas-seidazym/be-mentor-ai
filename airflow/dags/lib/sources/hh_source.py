@@ -242,7 +242,7 @@ def collect_hh_vacancies(
 
     hh = HHApiClient(
         user_agent=user_agent,
-        access_token=access_token,
+        access_token=None,
     )
 
     area_id = area_override
