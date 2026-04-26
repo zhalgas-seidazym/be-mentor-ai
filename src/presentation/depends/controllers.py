@@ -39,6 +39,8 @@ from src.application.vacancies.interfaces import (
 from src.domain.interfaces import IJWTService, IUoW, IOpenAIService
 from src.presentation.depends.repositories import *
 from src.presentation.depends.session import get_uow
+from src.infrastructure.integrations.airflow_client import AirflowClient
+from redis.asyncio import Redis
 
 
 @inject
@@ -48,6 +50,7 @@ async def get_auth_controller(
         oauth_service: IOAuthService = Depends(Provide[Container.oauth_service]),
         jwt_service: IJWTService = Depends(Provide[Container.jwt_service]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
+        airflow_client: AirflowClient = Depends(Provide[Container.airflow_client]),
         uow: IUoW = Depends(get_uow)
 ) -> IAuthController:
     return AuthController(
@@ -56,6 +59,7 @@ async def get_auth_controller(
         oauth_service=oauth_service,
         jwt_service=jwt_service,
         hash_service=hash_service,
+        airflow_client=airflow_client,
         uow=uow
     )
 
@@ -63,6 +67,7 @@ async def get_auth_controller(
 async def get_user_controller(
         user_repository: IUserRepository = Depends(get_user_repository),
         user_skill_repository: IUserSkillRepository = Depends(get_user_skill_repository),
+        user_vacancy_repository: IUserVacancyRepository = Depends(get_user_vacancy_repository),
         skill_repository: ISkillRepository = Depends(get_skill_repository),
         question_repository: IQuestionRepository = Depends(get_question_repository),
         direction_repository: IDirectionRepository = Depends(get_direction_repository),
@@ -72,6 +77,8 @@ async def get_user_controller(
         interview_session_repository: IInterviewSessionRepository = Depends(get_interview_session_repository),
         interview_question_repository: IInterviewQuestionRepository = Depends(get_interview_question_repository),
         openai_service: IOpenAIService = Depends(Provide[Container.openai_service]),
+        skill_search_service: ISkillSearchService = Depends(Provide[Container.skill_search_service]),
+        airflow_client: AirflowClient = Depends(Provide[Container.airflow_client]),
         hash_service: IHashService = Depends(Provide[Container.hash_service]),
         uow: IUoW = Depends(get_uow)
 ) -> IUserController:
@@ -84,9 +91,12 @@ async def get_user_controller(
         interview_session_repository=interview_session_repository,
         interview_question_repository=interview_question_repository,
         salary_repository=salary_repository,
+        user_vacancy_repository=user_vacancy_repository,
         city_repository=city_repository,
         direction_repository=direction_repository,
         openai_service=openai_service,
+        skill_search_service=skill_search_service,
+        airflow_client=airflow_client,
         uow=uow,
     )
     return UserController(
@@ -190,15 +200,20 @@ async def get_location_controller(
         city_repository=city_repository,
     )
 
+@inject
 async def get_vacancy_controller(
         vacancy_repository: IVacancyRepository = Depends(get_vacancy_repository),
         vacancy_skill_repository: IVacancySkillRepository = Depends(get_vacancy_skill_repository),
         user_vacancy_repository: IUserVacancyRepository = Depends(get_user_vacancy_repository),
+        airflow_client: AirflowClient = Depends(Provide[Container.airflow_client]),
+        redis: Redis = Depends(Provide[Container.redis]),
 ) -> IVacancyController:
     return VacancyController(
         vacancy_repository=vacancy_repository,
         vacancy_skill_repository=vacancy_skill_repository,
         user_vacancy_repository=user_vacancy_repository,
+        airflow_client=airflow_client,
+        redis=redis,
     )
 
 @inject

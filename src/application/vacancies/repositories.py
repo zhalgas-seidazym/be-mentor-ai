@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -273,3 +273,9 @@ class UserVacancyRepository(IUserVacancyRepository):
 
         await self._session.delete(row)
         return True
+
+    async def delete_by_user(self, user_id: int) -> int:
+        result = await self._session.execute(
+            delete(UserVacancy).where(UserVacancy.user_id == user_id)
+        )
+        return int(result.rowcount or 0)

@@ -104,6 +104,16 @@ class InterviewQuestionRepository(IInterviewQuestionRepository):
         row = result.scalar_one_or_none()
         return interview_question_orm_to_dto(row) if row else None
 
+    async def get_latest_followup(self, session_id: int, main_question_id: int) -> Optional[InterviewQuestionDTO]:
+        query = select(InterviewQuestion).where(
+            InterviewQuestion.session_id == session_id,
+            InterviewQuestion.main_question_id == main_question_id,
+            InterviewQuestion.is_followup.is_(True),
+        ).order_by(InterviewQuestion.followup_index.desc(), InterviewQuestion.id.desc()).limit(1)
+        result = await self._session.execute(query)
+        row = result.scalar_one_or_none()
+        return interview_question_orm_to_dto(row) if row else None
+
     async def count_followups(self, session_id: int, main_question_id: int) -> int:
         query = select(func.count()).select_from(InterviewQuestion).where(
             InterviewQuestion.session_id == session_id,

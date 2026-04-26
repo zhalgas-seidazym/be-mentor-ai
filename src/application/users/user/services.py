@@ -9,15 +9,17 @@ from src.application.directions.interfaces import IDirectionRepository
 from src.application.questions.interfaces import IUserQuestionRepository
 from src.application.interview.interfaces import IInterviewSessionRepository, IInterviewQuestionRepository
 from src.application.skills.dtos import SkillDTO, UserSkillDTO
-from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository
+from src.application.skills.interfaces import ISkillRepository, IUserSkillRepository, ISkillSearchService
 from src.application.questions.dtos import QuestionDTO
 from src.application.questions.interfaces import IQuestionRepository
 from src.application.directions.dtos import SalaryDTO, DirectionDTO
 from src.application.directions.interfaces import ISalaryRepository
+from src.application.vacancies.interfaces import IUserVacancyRepository
 from src.domain.base_dto import PaginationDTO
 from src.domain.interfaces import IUoW, IOpenAIService
 from src.domain.value_objects import ChatGPTModel
 from src.application.users.user.interfaces import IUserService
+from src.infrastructure.integrations.airflow_client import AirflowClient
 
 
 class UserService(IUserService):
@@ -32,9 +34,12 @@ class UserService(IUserService):
         interview_session_repository: IInterviewSessionRepository,
         interview_question_repository: IInterviewQuestionRepository,
         salary_repository: ISalaryRepository,
+        user_vacancy_repository: IUserVacancyRepository,
         city_repository: ICityRepository,
         direction_repository: IDirectionRepository,
         openai_service: IOpenAIService,
+        skill_search_service: ISkillSearchService,
+        airflow_client: AirflowClient,
     ):
         self._uow = uow
         self._user_repository = user_repository
@@ -45,9 +50,12 @@ class UserService(IUserService):
         self._interview_session_repository = interview_session_repository
         self._interview_question_repository = interview_question_repository
         self._salary_repository = salary_repository
+        self._user_vacancy_repository = user_vacancy_repository
         self._city_repository = city_repository
         self._direction_repository = direction_repository
         self._openai_service = openai_service
+        self._skill_search_service = skill_search_service
+        self._airflow_client = airflow_client
 
     async def get_theoretical_skills(
         self,
@@ -150,6 +158,9 @@ class UserService(IUserService):
         hashed_password: Optional[str] = None,
     ) -> UserDTO:
         direction_changed = direction_id is not None and direction_id != user.direction_id
+        city_changed = city_id is not None and city_id != user.city_id
+        skills_changed = unique_skill_ids is not None
+        should_refresh_vacancies = direction_changed or city_changed or skills_changed
 
         if unique_skill_ids is not None and skill_name_list is None:
             skill_name_list = []
@@ -360,6 +371,19 @@ class UserService(IUserService):
                         )
                     )
 
+            if should_refresh_vacancies:
+                await self._user_vacancy_repository.delete_by_user(user_id=user.id)
+
+        if should_refresh_vacancies:
+            try:
+                await self._airflow_client.trigger_dag(
+                    dag_id="vacancy_pipeline_orchestrator_dag",
+                    conf={"user_id": user.id},
+                )
+            except Exception:
+                # Best-effort: profile update should succeed even if Airflow is down.
+                pass
+
         return updated
 
     async def _update_user_profile(
@@ -491,6 +515,7 @@ class UserService(IUserService):
         created_skill = await self._skill_repository.add(SkillDTO(name=skill_name))
         if not created_skill:
             return None, skill_name
+        await self._skill_search_service.index(skill_id=created_skill.id, name=created_skill.name)
         return created_skill.id, created_skill.name
 
     async def _seed_questions_if_needed(self, module_id: int, canonical_name: str) -> None:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Dict, Optional, List, Union
 
 from src.application.vacancies.dtos import VacancyDTO, VacancySkillDTO, UserVacancyDTO
 from src.domain.base_dto import PaginationDTO
@@ -85,6 +85,9 @@ class IUserVacancyRepository(ABC):
     @abstractmethod
     async def delete(self, user_id: int, vacancy_id: int) -> bool: ...
 
+    @abstractmethod
+    async def delete_by_user(self, user_id: int) -> int: ...
+
 
 class IVacancyController(ABC):
     @abstractmethod
@@ -92,7 +95,7 @@ class IVacancyController(ABC):
         self,
         user_id: int,
         populate_vacancy: bool = False,
-    ) -> List[UserVacancyDTO]: ...
+    ) -> Union[List[UserVacancyDTO], Dict[str, Union[str, int]]]: ...
 
     @abstractmethod
     async def get_by_id(
