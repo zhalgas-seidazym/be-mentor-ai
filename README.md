@@ -13,7 +13,7 @@ cp .env.example .env
 2. First start (build images):
 
 ```bash
-docker-compose up --build -d
+docker compose -f docker-compose.yaml -f airflow/docker-compose.yaml up --build -d
 ```
 
 3. Run migrations inside Docker:
@@ -25,8 +25,10 @@ docker-compose exec api alembic upgrade head
 4. Seed reference data:
 
 ```bash
-docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/locations.sql
-docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/skills.sql
+docker compose cp ./seeders/locations.sql db:/tmp/locations.sql                                                                                                                   
+docker compose exec db psql -U postgres -d mentor_ai -f /tmp/locations.sql 
+docker compose cp ./seeders/skills.sql db:/tmp/skills.sql                                                                                                                         
+docker compose exec db psql -U postgres -d mentor_ai -f /tmp/skills.sql   
 ```
 
 5. Server runs inside Docker (no separate `uvicorn` needed).
@@ -34,7 +36,7 @@ docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/sk
 Next starts:
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.yaml -f airflow/docker-compose.yaml up -d
 ```
 
 ## Environment
@@ -65,17 +67,6 @@ Apply:
 
 ```bash
 docker-compose exec api alembic upgrade head
-```
-
-## Seeders
-
-Reference SQL seed files live in `seeders/`.
-
-Run after migrations:
-
-```bash
-docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/locations.sql
-docker-compose exec db psql -U $POSTGRES_USER -d $POSTGRES_DB -f /src/seeders/skills.sql
 ```
 
 ## Notes

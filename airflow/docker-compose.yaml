@@ -57,13 +57,21 @@ services:
       - -c
       - |
         airflow db migrate && \
-        airflow users create \
+        (airflow users create \
           --username airflow \
           --password airflow \
           --firstname Air \
           --lastname Flow \
           --role Admin \
-          --email admin@example.com
+          --email admin@example.com || true) && \
+        airflow pools set hh_api_pool 5 "HH API pool" && \
+        python - <<EOF
+        import os
+        from airflow.models import Variable
+        
+        for key, value in os.environ.items():
+            Variable.set(key, value)
+        EOF
 
   airflow-api-server:
     build:
